@@ -1,0 +1,41 @@
+SELECT  
+t0.date,
+t0.channel_id,
+t0.video_id, t1.video_title,
+t0.claimed_status,
+t0.uploader_type,
+t0.live_or_on_demand,
+t0.subscribed_status,
+t0.country_code,
+t0.views,
+t0.comments,
+t0.shares,
+t0.watch_time_minutes,
+t0.average_view_duration_seconds,
+t0.average_view_duration_percentage,
+t0.annotation_impressions,
+t0.annotation_clickable_impressions,
+t0.annotation_clicks,
+t0.annotation_click_through_rate,
+t0.annotation_closable_impressions,
+t0.annotation_closes,
+t0.annotation_close_rate,
+t0.card_teaser_impressions,
+t0.card_teaser_clicks,
+t0.card_teaser_click_rate,
+t0.card_impressions,
+t0.card_clicks,
+t0.card_click_rate,
+t0.subscribers_gained,
+t0.subscribers_lost,
+t0.videos_added_to_playlists,
+t0.videos_removed_from_playlists,
+t0.likes,
+t0.dislikes,
+t0.red_views,
+t0.red_watch_time_minutes
+
+FROM
+ `pops-204909.check_2_projects.basic_table` AS t0
+INNER JOIN  `pops-204909.check_2_projects.revenue_table` AS t1
+on t0.CHANNEL_ID = t1.CHANNEL_ID and t0.VIDEO_ID = t1.VIDEO_ID

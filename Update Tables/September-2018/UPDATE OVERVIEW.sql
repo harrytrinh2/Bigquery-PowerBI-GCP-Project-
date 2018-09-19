@@ -59,7 +59,7 @@ FROM
                   SUM(estimated_youtube_ad_revenue) AS `EST_YOUTUBE_AD_REVENUE`,
                   SUM(estimated_monetized_playbacks) AS `EST_MONETIZED_PLAYBACKS`
                   FROM `pops-204909.yt_affiliate.p_content_owner_estimated_revenue_a1_yt_affiliate`   
-            WHERE DATE(_PARTITIONTIME) between "2018-07-01" and "2018-07-31"
+            WHERE DATE(_PARTITIONTIME) between "2018-08-01" and "2018-08-31"
             --AND COUNTRY_CODE = "VN" 
             GROUP BY `LOCATION`,`DATE`--  CHANNEL_ID,VIDEO_ID,`MONTH`,`QUARTER`,`YEAR`
             ) t0
@@ -84,7 +84,7 @@ LEFT JOIN
                   AVG(average_view_duration_seconds) as `AVERAGE_VIEW_DURATION`,
                   SUM(watch_time_minutes*60) as `TOTAL_VIEW_DURATION`
                   FROM `929791903032.yt_affiliate.p_content_owner_basic_a3_yt_affiliate`
-            WHERE DATE(_PARTITIONTIME) between "2018-07-01" and "2018-07-31"
+            WHERE DATE(_PARTITIONTIME) between "2018-08-01" and "2018-08-31"
             --and VIDEO_ID IN ("4e7iDjQrUB8")
             --AND COUNTRY_CODE = "VN"
             --and 
@@ -111,7 +111,7 @@ LEFT JOIN
                   SUM(video_duration_sec*owned_views) as `TOTAL_VIDEO_DURATION`,
                   AVG(video_duration_sec) as `AVERAGE_VIDEO_DURATION`
                   FROM `929791903032.yt_affiliate.p_content_owner_ad_revenue_raw_a1_yt_affiliate`
-            WHERE DATE(_PARTITIONTIME) between "2018-07-01" and "2018-07-31"
+            WHERE DATE(_PARTITIONTIME) between "2018-08-01" and "2018-08-31"
             --and VIDEO_ID IN ("4e7iDjQrUB8") 
             --AND COUNTRY_CODE = "VN"
             --and 
@@ -157,7 +157,7 @@ FROM
                   SUM(ad_impressions) AS `AD_IMPRESSIONS`,
                   SUM(estimated_monetized_playbacks) AS `EST_MONETIZED_PLAYBACKS`
                   FROM `pops-204909.yt_entertainment.p_content_owner_estimated_revenue_a1_yt_entertainment`    
-            WHERE DATE(_PARTITIONTIME) between "2018-07-01" and "2018-07-31"
+            WHERE DATE(_PARTITIONTIME) between "2018-08-01" and "2018-08-31"
             --AND COUNTRY_CODE = "VN"
             GROUP BY `LOCATION`,`DATE`--,CHANNEL_ID,VIDEO_ID,`MONTH`,`QUARTER`,`YEAR`
             ) t0
@@ -181,7 +181,7 @@ LEFT JOIN
                   AVG(average_view_duration_seconds) as `AVERAGE_VIEW_DURATION`,
                   SUM(watch_time_minutes*60) as `TOTAL_VIEW_DURATION`
                   FROM `929791903032.yt_entertainment.p_content_owner_basic_a3_yt_entertainment`
-            WHERE DATE(_PARTITIONTIME) between "2018-07-01" and "2018-07-31"
+            WHERE DATE(_PARTITIONTIME) between "2018-08-01" and "2018-08-31"
             --and VIDEO_ID IN ("4e7iDjQrUB8")
             --AND COUNTRY_CODE = "VN"
             --and 
@@ -209,7 +209,7 @@ LEFT JOIN
                   SUM(video_duration_sec*owned_views) as `TOTAL_VIDEO_DURATION`,
                   AVG(video_duration_sec) as `AVERAGE_VIDEO_DURATION`
                   FROM `929791903032.yt_entertainment.p_content_owner_ad_revenue_raw_a1_yt_entertainment`
-            WHERE DATE(_PARTITIONTIME) between "2018-07-01" and "2018-07-31"
+            WHERE DATE(_PARTITIONTIME) between "2018-08-01" and "2018-08-31"
             --and VIDEO_ID IN ("4e7iDjQrUB8") 
             --AND COUNTRY_CODE = "VN"
             --and 
@@ -256,7 +256,7 @@ FROM
                   SUM(ad_impressions) AS `AD_IMPRESSIONS`,
                   SUM(estimated_monetized_playbacks) AS `EST_MONETIZED_PLAYBACKS`
                   FROM `pops-204909.yt_music.p_content_owner_estimated_revenue_a1_yt_music`   
-            WHERE DATE(_PARTITIONTIME) between "2018-07-01" and "2018-07-31"
+            WHERE DATE(_PARTITIONTIME) between "2018-08-01" and "2018-08-31"
             --AND COUNTRY_CODE = "VN"
             GROUP BY `LOCATION`,`DATE`--,CHANNEL_ID,VIDEO_ID,`MONTH`,`QUARTER`,`YEAR`
             ) t0
@@ -281,7 +281,7 @@ LEFT JOIN
                   AVG(average_view_duration_seconds) as `AVERAGE_VIEW_DURATION`,
                   SUM(watch_time_minutes*60) as `TOTAL_VIEW_DURATION`
                   FROM `929791903032.yt_music.p_content_owner_basic_a3_yt_music`
-            WHERE DATE(_PARTITIONTIME) between "2018-07-01" and "2018-07-31"
+            WHERE DATE(_PARTITIONTIME) between "2018-08-01" and "2018-08-31"
             --and VIDEO_ID IN ("4e7iDjQrUB8")
             --AND COUNTRY_CODE = "VN"
             --and 
@@ -309,7 +309,7 @@ LEFT JOIN
                   SUM(video_duration_sec*owned_views) as `TOTAL_VIDEO_DURATION`,
                   AVG(video_duration_sec) as `AVERAGE_VIDEO_DURATION`
                   FROM `929791903032.yt_music.p_content_owner_ad_revenue_raw_a1_yt_music`
-            WHERE DATE(_PARTITIONTIME) between "2018-07-01" and "2018-07-31"
+            WHERE DATE(_PARTITIONTIME) between "2018-08-01" and "2018-08-31"
             --and VIDEO_ID IN ("4e7iDjQrUB8") 
             --AND COUNTRY_CODE = "VN"
             --and 
@@ -356,7 +356,7 @@ FROM
                   SUM(ad_impressions) AS `AD_IMPRESSIONS`,
                   SUM(estimated_monetized_playbacks) AS `EST_MONETIZED_PLAYBACKS`
                   FROM `pops-204909.yt_kids.p_content_owner_estimated_revenue_a1_yt_kids`   
-            WHERE DATE(_PARTITIONTIME) between "2018-07-01" and "2018-07-31"
+            WHERE DATE(_PARTITIONTIME) between "2018-08-01" and "2018-08-31"
             --AND COUNTRY_CODE = "VN"
             GROUP BY `LOCATION`,`DATE`--,CHANNEL_ID,VIDEO_ID,`MONTH`,`QUARTER`,`YEAR`
             ) t0
@@ -381,7 +381,7 @@ LEFT JOIN
                   AVG(average_view_duration_seconds) as `AVERAGE_VIEW_DURATION`,
                   SUM(watch_time_minutes*60) as `TOTAL_VIEW_DURATION`
                   FROM `929791903032.yt_kids.p_content_owner_basic_a3_yt_kids`
-            WHERE DATE(_PARTITIONTIME) between "2018-07-01" and "2018-07-31"
+            WHERE DATE(_PARTITIONTIME) between "2018-08-01" and "2018-08-31"
             --and VIDEO_ID IN ("4e7iDjQrUB8")
             --AND COUNTRY_CODE = "VN"
             --and 
@@ -409,7 +409,7 @@ LEFT JOIN
                   SUM(video_duration_sec*owned_views) as `TOTAL_VIDEO_DURATION`,
                   AVG(video_duration_sec) as `AVERAGE_VIDEO_DURATION`
                   FROM `929791903032.yt_kids.p_content_owner_ad_revenue_raw_a1_yt_kids`
-            WHERE DATE(_PARTITIONTIME) between "2018-07-01" and "2018-07-31"
+            WHERE DATE(_PARTITIONTIME) between "2018-08-01" and "2018-08-31"
             --and VIDEO_ID IN ("4e7iDjQrUB8")
             --AND COUNTRY_CODE = "VN"
             --and
