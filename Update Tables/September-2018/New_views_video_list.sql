@@ -36,7 +36,7 @@ FROM
 SELECT  
         distinct(t0.VIDEO_ID),
         t0.CMS_ID,
-        t0.time_uploaded,
+        CASE WHEN t0.time_published >='2018-09-14' THEN t0.time_published ELSE t0.time_uploaded END AS `time_uploaded`,
         t0.DATE, 
         t0.CHANNEL_ID,
         t1.EST_VIEWS,
@@ -47,10 +47,11 @@ FROM
                   1 as `CMS_ID`,
                   DATE(_PARTITIONTIME) as `DATE`,
                   VIDEO_ID,
-                  CHANNEL_ID, TITLE,DATE(PARSE_TIMESTAMP("%Y/%m/%d %H:%M:%S", time_uploaded)) as time_uploaded
+                  CHANNEL_ID, TITLE,DATE(PARSE_TIMESTAMP("%Y/%m/%d %H:%M:%S", time_uploaded)) as time_uploaded,
+                  DATE(PARSE_TIMESTAMP("%Y/%m/%d %H:%M:%S", time_published)) as time_published
             FROM `pops-204909.yt_music.p_content_owner_video_metadata_a1_yt_music`
-            WHERE DATE(_PARTITIONTIME) between "2018-09-07" and "2018-09-13"
-            GROUP BY `DATE`,CHANNEL_ID,VIDEO_ID,title,time_uploaded
+            WHERE DATE(_PARTITIONTIME) between "2018-09-14" and "2018-09-20" 
+            GROUP BY `DATE`,CHANNEL_ID,VIDEO_ID,title,time_uploaded,time_published
             ) t0
 INNER JOIN
             (
@@ -61,13 +62,13 @@ INNER JOIN
                   CHANNEL_ID,
                   (views) AS `EST_VIEWS`
             FROM `pops-204909.yt_music.p_content_owner_basic_a3_yt_music`
-            WHERE DATE(_PARTITIONTIME) between "2018-09-07" and "2018-09-13"
+            WHERE DATE(_PARTITIONTIME) between "2018-09-14" and "2018-09-20" 
             GROUP BY `DATE`,CHANNEL_ID,VIDEO_ID,EST_VIEWS
             ) t1 on t0.CMS_ID = t1.CMS_ID and t0.DATE = t1.DATE and t0.CHANNEL_ID = t1.CHANNEL_ID and t0.VIDEO_ID = t1.VIDEO_ID
 )
 )
 WHERE
-    DATE BETWEEN '2018-09-07' AND '2018-09-13' and time_uploaded between "2018-09-07" and "2018-09-13"
+    DATE BETWEEN "2018-09-14" and "2018-09-20"  and time_uploaded between "2018-09-14" and "2018-09-20" 
 GROUP BY
     DATE,
     CMS_ID,    
@@ -78,7 +79,7 @@ GROUP BY
 GROUP BY VIDEO_ID ,CMS_ID,
     TITLE,time_uploaded
 )
-LIMIT 20
+LIMIT 50
 )
 
 UNION ALL
@@ -121,7 +122,7 @@ FROM
 SELECT  
         distinct(t0.VIDEO_ID),
         t0.CMS_ID,
-        t0.time_uploaded,
+        CASE WHEN t0.time_published >='2018-09-14' THEN t0.time_published ELSE t0.time_uploaded END AS `time_uploaded`,
         t0.DATE, 
         t0.CHANNEL_ID,
         t1.EST_VIEWS,
@@ -132,10 +133,11 @@ FROM
                   2 as `CMS_ID`,
                   DATE(_PARTITIONTIME) as `DATE`,
                   VIDEO_ID,
-                  CHANNEL_ID, TITLE,DATE(PARSE_TIMESTAMP("%Y/%m/%d %H:%M:%S", time_uploaded)) as time_uploaded
+                  CHANNEL_ID, TITLE,DATE(PARSE_TIMESTAMP("%Y/%m/%d %H:%M:%S", time_uploaded)) as time_uploaded,
+                  DATE(PARSE_TIMESTAMP("%Y/%m/%d %H:%M:%S", time_published)) as time_published
             FROM `pops-204909.yt_kids.p_content_owner_video_metadata_a1_yt_kids`
-            WHERE DATE(_PARTITIONTIME) between "2018-09-07" and "2018-09-13"
-            GROUP BY `DATE`,CHANNEL_ID,VIDEO_ID,title,time_uploaded
+            WHERE DATE(_PARTITIONTIME) between "2018-09-14" and "2018-09-20" 
+            GROUP BY `DATE`,CHANNEL_ID,VIDEO_ID,title,time_uploaded,time_published
             ) t0
 INNER JOIN
             (
@@ -146,13 +148,13 @@ INNER JOIN
                   CHANNEL_ID,
                   (views) AS `EST_VIEWS`
             FROM `pops-204909.yt_kids.p_content_owner_basic_a3_yt_kids`
-            WHERE DATE(_PARTITIONTIME) between "2018-09-07" and "2018-09-13"
+            WHERE DATE(_PARTITIONTIME) between "2018-09-14" and "2018-09-20" 
             GROUP BY `DATE`,CHANNEL_ID,VIDEO_ID,EST_VIEWS
             ) t1 on t0.CMS_ID = t1.CMS_ID and t0.DATE = t1.DATE and t0.CHANNEL_ID = t1.CHANNEL_ID and t0.VIDEO_ID = t1.VIDEO_ID
 )
 )
 WHERE
-    DATE BETWEEN '2018-09-07' AND '2018-09-13' and time_uploaded between "2018-09-07" and "2018-09-13"
+    DATE BETWEEN "2018-09-14" and "2018-09-20"  and time_uploaded between "2018-09-14" and "2018-09-20" 
 GROUP BY 
     DATE,
     CMS_ID,    
@@ -163,7 +165,7 @@ GROUP BY
 GROUP BY VIDEO_ID ,CMS_ID,
     TITLE,time_uploaded
 )
-LIMIT 20
+LIMIT 50
 )
 
 UNION ALL
@@ -206,7 +208,7 @@ FROM
 SELECT  
         distinct(t0.VIDEO_ID),
         t0.CMS_ID,
-        t0.time_uploaded,
+        CASE WHEN t0.time_published >='2018-09-14' THEN t0.time_published ELSE t0.time_uploaded END AS `time_uploaded`,
         t0.DATE, 
         t0.CHANNEL_ID,
         t1.EST_VIEWS,
@@ -217,10 +219,11 @@ FROM
                   3 as `CMS_ID`,
                   DATE(_PARTITIONTIME) as `DATE`,
                   VIDEO_ID,
-                  CHANNEL_ID, TITLE,DATE(PARSE_TIMESTAMP("%Y/%m/%d %H:%M:%S", time_uploaded)) as time_uploaded
+                  CHANNEL_ID, TITLE,DATE(PARSE_TIMESTAMP("%Y/%m/%d %H:%M:%S", time_uploaded)) as time_uploaded,
+                  DATE(PARSE_TIMESTAMP("%Y/%m/%d %H:%M:%S", time_published)) as time_published
             FROM `pops-204909.yt_entertainment.p_content_owner_video_metadata_a1_yt_entertainment`
-            WHERE DATE(_PARTITIONTIME) between "2018-09-07" and "2018-09-13"
-            GROUP BY `DATE`,CHANNEL_ID,VIDEO_ID,title,time_uploaded
+            WHERE DATE(_PARTITIONTIME) between "2018-09-14" and "2018-09-20" 
+            GROUP BY `DATE`,CHANNEL_ID,VIDEO_ID,title,time_uploaded,time_published
             ) t0
 INNER JOIN
             (
@@ -231,13 +234,13 @@ INNER JOIN
                   CHANNEL_ID,
                   (views) AS `EST_VIEWS`
             FROM `pops-204909.yt_entertainment.p_content_owner_basic_a3_yt_entertainment`
-            WHERE DATE(_PARTITIONTIME) between "2018-09-07" and "2018-09-13"
+            WHERE DATE(_PARTITIONTIME) between "2018-09-14" and "2018-09-20" 
             GROUP BY `DATE`,CHANNEL_ID,VIDEO_ID,EST_VIEWS
             ) t1 on t0.CMS_ID = t1.CMS_ID and t0.DATE = t1.DATE and t0.CHANNEL_ID = t1.CHANNEL_ID and t0.VIDEO_ID = t1.VIDEO_ID
 )
 )
 WHERE
-    DATE BETWEEN '2018-09-07' AND '2018-09-13' and time_uploaded between "2018-09-07" and "2018-09-13"
+    DATE BETWEEN "2018-09-14" and "2018-09-20"  and time_uploaded between "2018-09-14" and "2018-09-20" 
 GROUP BY
     DATE,
     CMS_ID,    
@@ -248,7 +251,7 @@ GROUP BY
 GROUP BY VIDEO_ID ,CMS_ID,
     TITLE,time_uploaded
 )
-LIMIT 20
+LIMIT 50
 )
 
 UNION ALL
@@ -291,7 +294,7 @@ FROM
 SELECT  
         distinct(t0.VIDEO_ID),
         t0.CMS_ID,
-        t0.time_uploaded,
+        CASE WHEN t0.time_published >='2018-09-14' THEN t0.time_published ELSE t0.time_uploaded END AS `time_uploaded`,
         t0.DATE, 
         t0.CHANNEL_ID,
         t1.EST_VIEWS,
@@ -302,10 +305,11 @@ FROM
                   4 as `CMS_ID`,
                   DATE(_PARTITIONTIME) as `DATE`,
                   VIDEO_ID,
-                  CHANNEL_ID, TITLE,DATE(PARSE_TIMESTAMP("%Y/%m/%d %H:%M:%S", time_uploaded)) as time_uploaded
+                  CHANNEL_ID, TITLE,DATE(PARSE_TIMESTAMP("%Y/%m/%d %H:%M:%S", time_uploaded)) as time_uploaded,
+                  DATE(PARSE_TIMESTAMP("%Y/%m/%d %H:%M:%S", time_published)) as time_published
             FROM `pops-204909.yt_affiliate.p_content_owner_video_metadata_a1_yt_affiliate`
-            WHERE DATE(_PARTITIONTIME) between "2018-09-07" and "2018-09-13"
-            GROUP BY `DATE`,CHANNEL_ID,VIDEO_ID,title,time_uploaded
+            WHERE DATE(_PARTITIONTIME) between "2018-09-14" and "2018-09-20" 
+            GROUP BY `DATE`,CHANNEL_ID,VIDEO_ID,title,time_uploaded,time_published
             ) t0
 INNER JOIN
             (
@@ -316,13 +320,13 @@ INNER JOIN
                   CHANNEL_ID,
                   (views) AS `EST_VIEWS`
             FROM `pops-204909.yt_affiliate.p_content_owner_basic_a3_yt_affiliate`
-            WHERE DATE(_PARTITIONTIME) between "2018-09-07" and "2018-09-13"
+            WHERE DATE(_PARTITIONTIME) between "2018-09-14" and "2018-09-20" 
             GROUP BY `DATE`,CHANNEL_ID,VIDEO_ID,EST_VIEWS
             ) t1 on t0.CMS_ID = t1.CMS_ID and t0.DATE = t1.DATE and t0.CHANNEL_ID = t1.CHANNEL_ID and t0.VIDEO_ID = t1.VIDEO_ID
 )
 )
 WHERE
-    DATE BETWEEN '2018-09-07' AND '2018-09-13' and time_uploaded between "2018-09-07" and "2018-09-13"
+    DATE BETWEEN "2018-09-14" and "2018-09-20"  and time_uploaded between "2018-09-14" and "2018-09-20" 
 GROUP BY
     DATE,
     CMS_ID,    
@@ -333,5 +337,5 @@ GROUP BY
 GROUP BY VIDEO_ID ,CMS_ID,
     TITLE,time_uploaded
 )
-LIMIT 20
+LIMIT 50
 )
