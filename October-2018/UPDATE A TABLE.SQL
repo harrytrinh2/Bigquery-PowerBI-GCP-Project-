@@ -1,0 +1,3 @@
+UPDATE `pops-204909.YouTube_target.YouTube_TH_REVENUE_Target_2018`
+SET LOCATION = "LOCAL"
+WHERE TRUE
