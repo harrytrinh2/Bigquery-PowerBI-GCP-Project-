@@ -40,13 +40,13 @@ def insert_into_Bigquery(file_name, table_id, dataset_id = '2017'):
         _views = data['views'][i_row]
         _estimated_partner_revenue = data['estimated_partner_revenue'][i_row]
         _arr.append((_date, _video_id, _content_type, str(_average_view_duration_seconds), _channel_id, _asset_id, _asset_labels, str(_views), _estimated_partner_revenue))
-        if i_row != 0 and i_row % 1000 == 0:
+        if i_row != 0 and i_row % 1500 == 0:
             rows_to_insert = _arr
             errors = client.insert_rows(table, rows_to_insert)
             assert errors == []
-            print ("Imported Successfully")
+            print round((float(int(i_row) / float(len(data))) * 100), 2), "%"
             print("--- %s seconds ---" % (time.time() - start_time))
-            time.sleep(10)
+            time.sleep(5)
             _arr = []
 if __name__ == '__main__':
     # TODO: INITIALIZE BIGQUERY
@@ -56,21 +56,21 @@ if __name__ == '__main__':
     #insert_into_Bigquery(file_name="L:\\Storage117\\BUSINESS_ANALYSIS\\YouTube reports repository\\2017\\02-Feb\\YouTube_popswwkids_M_20170201_20170228_videoclaim_rawdata_v1-0.xlsx", table_id="YouTube_popswwkids_M_2017")
     #insert_into_Bigquery(file_name="D:\\YouTube_popswwchsa_affiliate_M_20170101_20170131_videoclaim_rawdata_v1-0.xlsx", table_id="YouTube_popswwkids_M_2017")
 
-    print("Importing into KIDS table...")
-    for fol in glob.glob("L:\\Storage117\\BUSINESS_ANALYSIS\\YouTube reports repository\\2017\\*"):
-        for _file in glob.glob(os.path.join(fol+"\\", "*.xlsx")):
-            if "YouTube_popswwkids_M_2017" in _file:
-                print (_file.split("\\")[-1])
-                insert_into_Bigquery(file_name=_file,table_id="YouTube_popswwkids_M_2017")
-    print("Imported successfully into KIDS table!")
-
-    # print("Importing into ENTERTAINMENT table...")
+    # print("Importing into KIDS table...")
     # for fol in glob.glob("L:\\Storage117\\BUSINESS_ANALYSIS\\YouTube reports repository\\2017\\*"):
     #     for _file in glob.glob(os.path.join(fol+"\\", "*.xlsx")):
-    #         if "YouTube_popswwchsa_M_2017" in _file:
+    #         if "YouTube_popswwkids_M_2017" in _file:
     #             print (_file.split("\\")[-1])
-    #             insert_into_Bigquery(file_name=_file,table_id="YouTube_popswwchsa_M_2017")
-    # print("Imported successfully into ENTERTAINMENT table!")
+    #             insert_into_Bigquery(file_name=_file,table_id="YouTube_popswwkids_M_2017")
+    # print("Imported successfully into KIDS table!")
+
+    print("Importing into ENTERTAINMENT table...")
+    for fol in glob.glob("L:\\Storage117\\BUSINESS_ANALYSIS\\YouTube reports repository\\2017\\*"):
+        for _file in glob.glob(os.path.join(fol+"\\", "*.xlsx")):
+            if "YouTube_popswwchsa_M_2017" in _file:
+                print (_file.split("\\")[-1])
+                insert_into_Bigquery(file_name=_file,table_id="YouTube_popswwchsa_M_2017")
+    print("Imported successfully into ENTERTAINMENT table!")
 
     # print("Importing into AFFILIATE table...")
     # for fol in glob.glob("L:\\Storage117\\BUSINESS_ANALYSIS\\YouTube reports repository\\2017\\*"):
@@ -79,6 +79,7 @@ if __name__ == '__main__':
     #             print (_file.split("\\")[-1])
     #             insert_into_Bigquery(file_name=_file,table_id="YouTube_popswwchsa_affiliate_M_2017")
     # print("Imported successfully into AFFILIATE table!")
+
     # print("Importing into MUSIC table...")
     # for fol in glob.glob("L:\\Storage117\\BUSINESS_ANALYSIS\\YouTube reports repository\\2017\\*"):
     #     for _file in glob.glob(os.path.join(fol+"\\", "*.xlsx")):
