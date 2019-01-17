@@ -1,5 +1,5 @@
 SELECT updated_at,video_id,title,contract_id,category,category_sub1_name,category_sub2_name,season,phase,series_name 
-FROM `videos` WHERE updated_at >=  '2018-11-16'
+FROM `videos` WHERE updated_at >=  '2018-11-23'
 
 
 --count rows

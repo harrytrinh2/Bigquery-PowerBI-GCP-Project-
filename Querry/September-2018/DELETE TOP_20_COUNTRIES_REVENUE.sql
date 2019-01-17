@@ -1,0 +1,1 @@
+DELETE FROM `pops-204909.monthly_reports.top_20_countries_revenue` WHERE TRUE

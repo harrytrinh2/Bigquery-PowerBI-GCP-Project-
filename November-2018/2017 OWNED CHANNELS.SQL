@@ -1,4 +1,4 @@
-#MUSIC
+--MUSIC
 SELECT
 		1 AS `CMS_ID`,
 		Date as `DATE`,
@@ -9,7 +9,7 @@ SELECT
 		GROUP BY `DATE`
 UNION ALL
 
-#KIDS
+--KIDS
 SELECT
 		2 AS `CMS_ID`,
 		Date as `DATE`,
@@ -21,7 +21,7 @@ SELECT
 		
 UNION ALL
 
-#ENTERTAINMENT
+--ENTERTAINMENT
 SELECT
 		3 AS `CMS_ID`,
 		Date as `DATE`,

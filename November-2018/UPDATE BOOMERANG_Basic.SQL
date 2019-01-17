@@ -1,7 +1,7 @@
--- DELETE THANG 9 ESTIMATED
-DELETE `pops-204909.KIDS.Boomerang_Basic` WHERE DATE='2018-09-01 00:00:00 UTC'
+-- DELETE THANG 10 ESTIMATED
+DELETE `pops-204909.KIDS.Boomerang_Basic` WHERE DATE='2018-10-01 00:00:00 UTC'
 
---INSERT RAW THANG 9
+--INSERT RAW THANG 10
 INSERT INTO `pops-204909.KIDS.Boomerang_Basic` 
 (
   CMS_ID ,
@@ -27,11 +27,11 @@ FROM
         SUM(partner_revenue) AS `REVENUE`,
         SUM(owned_views) AS `OWNED_VIEWS`
     FROM `pops-204909.yt_kids.p_content_owner_ad_revenue_raw_a1_yt_kids`
-    WHERE DATE(_PARTITIONTIME) between "2018-09-01" and "2018-09-30" AND CHANNEL_ID = 'UC1psboQLDVCEOD46RNPZdgg'
+    WHERE DATE(_PARTITIONTIME) between "2018-10-01" and "2018-10-31" AND CHANNEL_ID = 'UC1psboQLDVCEOD46RNPZdgg'
     GROUP BY `DATE`,CHANNEL_ID,VIDEO_ID
     )
 
---INSERT ESTIMATED THANG 10
+--INSERT ESTIMATED THANG 11
 INSERT INTO `pops-204909.KIDS.Boomerang_Basic` 
 (
   CMS_ID ,
@@ -56,7 +56,7 @@ FROM
       VIDEO_ID,
       SUM(estimated_partner_revenue) AS `EST_REVENUE`
     FROM `pops-204909.yt_kids.p_content_owner_estimated_revenue_a1_yt_kids`
-    WHERE DATE(_PARTITIONTIME) between "2018-10-01" and "2018-10-31"  AND CHANNEL_ID = 'UC1psboQLDVCEOD46RNPZdgg'
+    WHERE DATE(_PARTITIONTIME) between "2018-11-01" and "2018-11-30"  AND CHANNEL_ID = 'UC1psboQLDVCEOD46RNPZdgg'
     GROUP BY `DATE`,CHANNEL_ID,VIDEO_ID
     ) t1 
 LEFT JOIN
@@ -67,6 +67,6 @@ LEFT JOIN
           VIDEO_ID,
           SUM(views) AS `EST_VIEWS`
     FROM `pops-204909.yt_kids.p_content_owner_basic_a3_yt_kids`
-    WHERE DATE(_PARTITIONTIME) between "2018-10-01" and "2018-10-31"  AND  CHANNEL_ID = 'UC1psboQLDVCEOD46RNPZdgg'
+    WHERE DATE(_PARTITIONTIME) between "2018-11-01" and "2018-11-30"  AND  CHANNEL_ID = 'UC1psboQLDVCEOD46RNPZdgg'
     GROUP BY `DATE`,CHANNEL_ID,VIDEO_ID
     ) t2 on t1.DATE = t2.DATE and t1.CHANNEL_ID = t2.CHANNEL_ID and t1.VIDEO_ID = t2.VIDEO_ID

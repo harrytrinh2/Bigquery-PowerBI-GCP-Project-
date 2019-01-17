@@ -31,7 +31,7 @@ FROM
 SELECT  
         distinct(t0.VIDEO_ID),
         t0.CMS_ID,
-        CASE WHEN t0.time_published >='2018-11-09' THEN t0.time_published ELSE t0.time_uploaded END AS `time_uploaded`,
+        CASE WHEN t0.time_published >='2018-11-16' THEN t0.time_published ELSE t0.time_uploaded END AS `time_uploaded`,
         t0.DATE, 
         t0.CHANNEL_ID,
         t1.EST_VIEWS,
@@ -45,7 +45,7 @@ FROM
                   CHANNEL_ID, TITLE,DATE(PARSE_TIMESTAMP("%Y/%m/%d %H:%M:%S", time_uploaded)) as time_uploaded,
                   DATE(PARSE_TIMESTAMP("%Y/%m/%d %H:%M:%S", time_published)) as time_published
             FROM `pops-204909.yt_music.p_content_owner_video_metadata_a1_yt_music`
-            WHERE DATE(_PARTITIONTIME) between "2018-11-09" and "2018-11-15"  
+            WHERE DATE(_PARTITIONTIME) between "2018-11-16" AND "2018-11-22"  
             GROUP BY `DATE`,CHANNEL_ID,VIDEO_ID,title,time_uploaded,time_published
             ) t0
 INNER JOIN
@@ -57,13 +57,13 @@ INNER JOIN
                   CHANNEL_ID,
                   (views) AS `EST_VIEWS`
             FROM `pops-204909.yt_music.p_content_owner_basic_a3_yt_music`
-            WHERE DATE(_PARTITIONTIME) between "2018-11-09" and "2018-11-15"  
+            WHERE DATE(_PARTITIONTIME) between "2018-11-16" AND "2018-11-22"  
             GROUP BY `DATE`,CHANNEL_ID,VIDEO_ID,EST_VIEWS
             ) t1 on t0.CMS_ID = t1.CMS_ID and t0.DATE = t1.DATE and t0.CHANNEL_ID = t1.CHANNEL_ID and t0.VIDEO_ID = t1.VIDEO_ID
 )
 )
 WHERE
-    DATE BETWEEN "2018-11-09" and "2018-11-15"   and time_uploaded between "2018-11-09" and "2018-11-15" 
+    DATE BETWEEN "2018-11-16" AND "2018-11-22"   and time_uploaded between "2018-11-16" AND "2018-11-22" 
 GROUP BY
     DATE,
     CMS_ID,    
@@ -109,7 +109,7 @@ FROM
 SELECT  
         distinct(t0.VIDEO_ID),
         t0.CMS_ID,
-        CASE WHEN t0.time_published >='2018-11-09' THEN t0.time_published ELSE t0.time_uploaded END AS `time_uploaded`,
+        CASE WHEN t0.time_published >='2018-11-16' THEN t0.time_published ELSE t0.time_uploaded END AS `time_uploaded`,
         t0.DATE, 
         t0.CHANNEL_ID,
         t1.EST_VIEWS,
@@ -123,7 +123,7 @@ FROM
                   CHANNEL_ID, TITLE,DATE(PARSE_TIMESTAMP("%Y/%m/%d %H:%M:%S", time_uploaded)) as time_uploaded,
                   DATE(PARSE_TIMESTAMP("%Y/%m/%d %H:%M:%S", time_published)) as time_published
             FROM `pops-204909.yt_kids.p_content_owner_video_metadata_a1_yt_kids`
-            WHERE DATE(_PARTITIONTIME) between "2018-11-09" and "2018-11-15"  
+            WHERE DATE(_PARTITIONTIME) between "2018-11-16" AND "2018-11-22"  
             GROUP BY `DATE`,CHANNEL_ID,VIDEO_ID,title,time_uploaded,time_published
             ) t0
 INNER JOIN
@@ -135,13 +135,13 @@ INNER JOIN
                   CHANNEL_ID,
                   (views) AS `EST_VIEWS`
             FROM `pops-204909.yt_kids.p_content_owner_basic_a3_yt_kids`
-            WHERE DATE(_PARTITIONTIME) between "2018-11-09" and "2018-11-15"  
+            WHERE DATE(_PARTITIONTIME) between "2018-11-16" AND "2018-11-22"  
             GROUP BY `DATE`,CHANNEL_ID,VIDEO_ID,EST_VIEWS
             ) t1 on t0.CMS_ID = t1.CMS_ID and t0.DATE = t1.DATE and t0.CHANNEL_ID = t1.CHANNEL_ID and t0.VIDEO_ID = t1.VIDEO_ID
 )
 )
 WHERE
-    DATE BETWEEN "2018-11-09" and "2018-11-15"  and time_uploaded between "2018-11-09" and "2018-11-15" 
+    DATE BETWEEN "2018-11-16" AND "2018-11-22"  and time_uploaded between "2018-11-16" AND "2018-11-22" 
 GROUP BY
     DATE,
     CMS_ID,    
@@ -187,7 +187,7 @@ FROM
 SELECT  
         distinct(t0.VIDEO_ID),
         t0.CMS_ID,
-        CASE WHEN t0.time_published >='2018-11-09' THEN t0.time_published ELSE t0.time_uploaded END AS `time_uploaded`,
+        CASE WHEN t0.time_published >='2018-11-16' THEN t0.time_published ELSE t0.time_uploaded END AS `time_uploaded`,
         t0.DATE, 
         t0.CHANNEL_ID,
         t1.EST_VIEWS,
@@ -201,7 +201,7 @@ FROM
                   CHANNEL_ID, TITLE,DATE(PARSE_TIMESTAMP("%Y/%m/%d %H:%M:%S", time_uploaded)) as time_uploaded,
                   DATE(PARSE_TIMESTAMP("%Y/%m/%d %H:%M:%S", time_published)) as time_published
             FROM `pops-204909.yt_entertainment.p_content_owner_video_metadata_a1_yt_entertainment`
-            WHERE DATE(_PARTITIONTIME) between "2018-11-09" and "2018-11-15" 
+            WHERE DATE(_PARTITIONTIME) between "2018-11-16" AND "2018-11-22" 
             GROUP BY `DATE`,CHANNEL_ID,VIDEO_ID,title,time_uploaded,time_published
             ) t0
 INNER JOIN
@@ -213,13 +213,13 @@ INNER JOIN
                   CHANNEL_ID,
                   (views) AS `EST_VIEWS`
             FROM `pops-204909.yt_entertainment.p_content_owner_basic_a3_yt_entertainment`
-            WHERE DATE(_PARTITIONTIME) between "2018-11-09" and "2018-11-15" 
+            WHERE DATE(_PARTITIONTIME) between "2018-11-16" AND "2018-11-22" 
             GROUP BY `DATE`,CHANNEL_ID,VIDEO_ID,EST_VIEWS
             ) t1 on t0.CMS_ID = t1.CMS_ID and t0.DATE = t1.DATE and t0.CHANNEL_ID = t1.CHANNEL_ID and t0.VIDEO_ID = t1.VIDEO_ID
 )
 )
 WHERE
-    DATE BETWEEN "2018-11-09" and "2018-11-15"   and time_uploaded between "2018-11-09" and "2018-11-15" 
+    DATE BETWEEN "2018-11-16" AND "2018-11-22"   and time_uploaded between "2018-11-16" AND "2018-11-22" 
 GROUP BY
     DATE,
     CMS_ID,    
@@ -264,7 +264,7 @@ FROM
 SELECT  
         distinct(t0.VIDEO_ID),
         t0.CMS_ID,
-        CASE WHEN t0.time_published >='2018-11-09' THEN t0.time_published ELSE t0.time_uploaded END AS `time_uploaded`,
+        CASE WHEN t0.time_published >='2018-11-16' THEN t0.time_published ELSE t0.time_uploaded END AS `time_uploaded`,
         t0.DATE, 
         t0.CHANNEL_ID,
         t1.EST_VIEWS,
@@ -278,7 +278,7 @@ FROM
                   CHANNEL_ID, TITLE,DATE(PARSE_TIMESTAMP("%Y/%m/%d %H:%M:%S", time_uploaded)) as time_uploaded,
                   DATE(PARSE_TIMESTAMP("%Y/%m/%d %H:%M:%S", time_published)) as time_published
             FROM `pops-204909.yt_affiliate.p_content_owner_video_metadata_a1_yt_affiliate`
-            WHERE DATE(_PARTITIONTIME) between "2018-11-09" and "2018-11-15"  
+            WHERE DATE(_PARTITIONTIME) between "2018-11-16" AND "2018-11-22"  
             GROUP BY `DATE`,CHANNEL_ID,VIDEO_ID,title,time_uploaded,time_published
             ) t0
 INNER JOIN
@@ -290,13 +290,13 @@ INNER JOIN
                   CHANNEL_ID,
                   (views) AS `EST_VIEWS`
             FROM `pops-204909.yt_affiliate.p_content_owner_basic_a3_yt_affiliate`
-            WHERE DATE(_PARTITIONTIME) between "2018-11-09" and "2018-11-15" 
+            WHERE DATE(_PARTITIONTIME) between "2018-11-16" AND "2018-11-22" 
             GROUP BY `DATE`,CHANNEL_ID,VIDEO_ID,EST_VIEWS
             ) t1 on t0.CMS_ID = t1.CMS_ID and t0.DATE = t1.DATE and t0.CHANNEL_ID = t1.CHANNEL_ID and t0.VIDEO_ID = t1.VIDEO_ID
 )
 )
 WHERE
-    DATE BETWEEN "2018-11-09" and "2018-11-15"   and time_uploaded between "2018-11-09" and "2018-11-15" 
+    DATE BETWEEN "2018-11-16" AND "2018-11-22"   and time_uploaded between "2018-11-16" AND "2018-11-22" 
 GROUP BY
     DATE,
     CMS_ID,    

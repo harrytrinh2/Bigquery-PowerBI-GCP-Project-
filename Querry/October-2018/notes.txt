@@ -1,0 +1,15 @@
+Khi có bảng RAW là cập nhật:
++ overview_light tháng 9  DONE
++ overview  DONE
++ overview_th   DONE
++ top_20_channels_views     DONE
++ top_20_channels_revenue   DONE
++ top_20_countries_views    DONE
++ top_20_countries_revenue  DONE
++ owned_channels DONE
+
+ + weekly
+ + CA
+ + chup hinh top
+ + setid
+ 
