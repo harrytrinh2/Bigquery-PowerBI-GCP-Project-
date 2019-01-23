@@ -1,23 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-###
-#
-# This script retrieves YouTube Reporting API reports. Use cases:
-# 1. If you specify a report URL, the script downloads that report.
-# 2. Otherwise, if you specify a job ID, the script retrieves a list of
-#    available reports for that job and prompts you to select a report.
-#    Then it retrieves that report as in case 1.
-# 3. Otherwise, the list retrieves a list of jobs for the user or,
-#    if specified, the content owner that the user is acting on behalf of.
-#    Then it prompts the user to select a job, and then executes case 2 and
-#    then case 1.
-# Usage examples:
-# python retrieve_reports.py --content_owner_id=<CONTENT_OWNER_ID> --local_file=<LOCAL_FILE>
-# python retrieve_reports.py --content_owner_id=<CONTENT_OWNER_ID> --job_id=<JOB_ID> --local_file=<LOCAL_FILE>
-# python retrieve_reports.py --content_owner_id=<CONTENT_OWNER_ID> --report_url=<REPORT_URL> --local_file=<LOCAL_FILE>
-#
-###
 
+import calendar
 import argparse
 import os
 import google.oauth2.credentials
@@ -30,6 +14,7 @@ from io import FileIO
 import socket
 from google.cloud import bigquery
 from datetime import timedelta
+import datetime
 
 CLIENT_SECRETS_FILE = "client_secret_929791903032-hpdm8djidqd8o5nqg2gk66efau34ea6q.apps.googleusercontent.com.json"
 
@@ -60,7 +45,6 @@ def list_reporting_jobs(youtube_reporting, **kwargs):
   # Only include the onBehalfOfContentOwner keyword argument if the user
   # set a value for the --content_owner argument.
   kwargs = remove_empty_kwargs(**kwargs)
-
   # Retrieve the reporting jobs for the user (or content owner).
   results = youtube_reporting.jobs().list(**kwargs).execute()
 
@@ -77,7 +61,7 @@ def list_reporting_jobs(youtube_reporting, **kwargs):
 
 
 # Call the YouTube Reporting API's reports.list method to retrieve reports created by a job.
-def retrieve_reports(youtube_reporting,LATEST_DATE,LATEST_DATE_next, **kwargs):
+def retrieve_reports(youtube_reporting,newest_month_BG,newest_month_BG_NEXT, **kwargs):
     # Only include the onBehalfOfContentOwner keyword argument if the user
     # set a value for the --content_owner argument.
     kwargs = remove_empty_kwargs(**kwargs)
@@ -92,7 +76,7 @@ def retrieve_reports(youtube_reporting,LATEST_DATE,LATEST_DATE_next, **kwargs):
         endTime = ''
         downloadUrl = ''
         for id in reports:
-            if id["startTime"] == str(LATEST_DATE)+"T08:00:00Z" and id["endTime"] == str(LATEST_DATE_next) + "T08:00:00Z":
+            if id["startTime"] == str(newest_month_BG)+"T08:00:00Z" and id["endTime"] == str(newest_month_BG_NEXT) + "T08:00:00Z":
                 jobId = id["jobId"]
                 startTime = id["startTime"]
                 endTime = id["endTime"]
@@ -116,7 +100,6 @@ def download_report(youtube_reporting, report_url, local_file):
             print('Download %d%%.' % int(status.progress() * 100))
     print('Download Complete!')
 
-
 # Prompt the user to select a job and return the specified ID.
 def get_job_id_from_user():
     job_id = input('Please enter the job id for the report retrieval: ')
@@ -129,16 +112,23 @@ def get_report_url_from_user(report_url):
     print('You chose "%s" to download.' % report_url)
     return report_url
 
-def get_latest_date(query):
+def get_lastest_month_func(query):
     query_job = client.query(query)
     rows = query_job.result()
     for i_row in rows:
-        _LATEST_DATE = i_row.get('LATEST_DATE')
-        return _LATEST_DATE
+        _newest_month_BG = i_row.get('newest_month_BG')
+        return _newest_month_BG
 def check_files(path):
     for file in os.listdir(path):
         if os.path.isfile(os.path.join(path, file)):
             yield file
+def add_months(sourcedate,months):
+    month = sourcedate.month - 1 + months
+    year = sourcedate.year + month // 12
+    month = month % 12 + 1
+    day = min(sourcedate.day,calendar.monthrange(year,month)[1])
+    return datetime.date(year,month,day)
+
 if __name__ == '__main__':
     #    Music: UPtu1ivBRvjYBGoz0m0Dfg
     #    Kids: ra8f1uKU-uu9osqlt3jb5g
@@ -147,39 +137,34 @@ if __name__ == '__main__':
     #    Music-TH: iTE9_S8Uo42n3JzGAiht1w
     #    Ent-TH: RPppPCMzH4DTihKfvR8EeA
     #    Aff-TH: xtl5pd5oPxbhI0dI0Qpkyg
-
+    # "MUSIC":"UPtu1ivBRvjYBGoz0m0Dfg","KIDS":"ra8f1uKU-uu9osqlt3jb5g",
+    # ,"AFFILIATE":"9C1hXNjkMN_2GO7ARpaplw","MUSIC-TH":"iTE9_S8Uo42n3JzGAiht1w","ENT-TH":"RPppPCMzH4DTihKfvR8EeA","AFF-TH":"xtl5pd5oPxbhI0dI0Qpkyg"
     youtube_reporting = get_authenticated_service()
-    content_owner = {"MUSIC":"UPtu1ivBRvjYBGoz0m0Dfg","KIDS":"ra8f1uKU-uu9osqlt3jb5g","ENT":"ncwbWh1Q1LCsMAeryRBocQ","AFFILIATE":"9C1hXNjkMN_2GO7ARpaplw","MUSIC-TH":"iTE9_S8Uo42n3JzGAiht1w","ENT-TH":"RPppPCMzH4DTihKfvR8EeA","AFF-TH":"xtl5pd5oPxbhI0dI0Qpkyg"}
-    job_id_Music = {"content_owner_ad_revenue_raw_a1": "58411f62-d342-4b81-ab7e-5fe4c479808f",
-                    "content_owner_video_metadata_a2": "dad11517-31c9-4af5-ad62-d4c986743aec"}
+    content_owner = {"ENT":"ncwbWh1Q1LCsMAeryRBocQ"}
+    job_id_Music = {"content_owner_ad_revenue_raw_a1": "58411f62-d342-4b81-ab7e-5fe4c479808f"}
 
-    job_id_Kids = {"content_owner_ad_revenue_raw_a1": "1d2b93e9-7de3-4e88-876a-831d3d0e1e83",
-                   "content_owner_video_metadata_a2": "0ef9cb40-039c-4c75-aa84-b96e60b0029d"}
+    job_id_Kids = {"content_owner_ad_revenue_raw_a1": "7ab6eeee-2cb4-4668-a3be-03ed125b7eb4"}
 
-    job_id_Ent = {"content_owner_ad_revenue_raw_a1": "c071a36c-a9ef-4ef7-8624-4f7fbeac0702",
-                  "content_owner_video_metadata_a2": "9955d3f3-8648-4334-8c9e-5722f6999282"}
+    job_id_Ent = {"content_owner_ad_revenue_raw_a1": "101b91ce-92a1-4ded-a2db-0de96af565e0"}
 
-    job_id_Aff = {"content_owner_ad_revenue_raw_a1": "4f47209b-07f2-4f2b-a709-7cc5e414c0cf",
-                  "content_owner_video_metadata_a2": "6fe1250d-6851-4468-aba1-9f6adff24a81"}
+    job_id_Aff = {"content_owner_ad_revenue_raw_a1": "d8fc0ba0-db14-46e0-adf8-560c956fbfea"}
 
-    job_id_Music_TH = {"content_owner_ad_revenue_raw_a1": "70f232e5-4c75-4613-8461-1c615a51269c",
-                       "content_owner_video_metadata_a2": "406770b1-c4e8-4a25-8cd4-89da792a7211"}
+    job_id_Music_TH = {"content_owner_ad_revenue_raw_a1": "d16b91f2-5885-4fbb-9ee6-3c3994decc37"}
 
-    job_id_Ent_TH = {"content_owner_ad_revenue_raw_a1": "45ffe8a1-9213-44d4-8d06-16102f163801",
-                     "content_owner_video_metadata_a2": "9d8b729a-4d0f-46c4-a17e-b83c806b5621"}
+    job_id_Ent_TH = {"content_owner_ad_revenue_raw_a1": "10a19692-9ad8-45ef-9ceb-cdd914337818"}
 
-    job_id_Aff_TH = {"content_owner_ad_revenue_raw_a1": "bab9bac2-4c5a-4cb5-b168-ba58a659fafe",
-                     "content_owner_video_metadata_a2": "02d59ec8-ea7e-46c1-9ccc-9a48a7250575"}
+    job_id_Aff_TH = {"content_owner_ad_revenue_raw_a1": "9f2c221b-3ec2-419f-9e4c-d8aa7494b2db"}
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "pops-dab1c699446f.json"
     client = bigquery.Client()
-    LATEST_DATE  = get_latest_date('''SELECT DATE(MAX(_PARTITIONTIME)) AS `LATEST_DATE`
+    newest_month_BG = get_lastest_month_func('''SELECT DATE(MAX(_PARTITIONTIME)) AS `newest_month_BG`
                        FROM `pops-204909.yt_kids.p_content_owner_ad_revenue_raw_a1_yt_kids`''')
-    print()
-    LATEST_DATE_NEXT = LATEST_DATE + timedelta(days=1)
-    print("LATEST_DATE: " ,LATEST_DATE)
+    newest_month_BG = datetime.datetime(int(str(newest_month_BG).split("-")[0]),int(str(newest_month_BG).split("-")[1]),1)
+    newest_month_BG_NEXT = add_months(newest_month_BG,1)
+    newest_month_BG = str(newest_month_BG).split(" ")[0]
+    print(newest_month_BG,newest_month_BG_NEXT)
     check_update = False
     for file in check_files("C:\\Users\\PhucCoi\\Documents\\PYTHON" + "\\"):
-        if str(LATEST_DATE) not in str(file):
+        if str(newest_month_BG) not in str(file):
             continue
         else:
             check_update = True
@@ -193,47 +178,68 @@ if __name__ == '__main__':
                 if content_owner_num == "MUSIC":
                     for job_id_num in job_id_Music:
                         print("--------------------------"+job_id_num+"--------------------------")
-                        report_url = get_report_url_from_user(retrieve_reports(youtube_reporting,LATEST_DATE=LATEST_DATE,LATEST_DATE_next=LATEST_DATE_NEXT,jobId=job_id_Music[str(job_id_num)],onBehalfOfContentOwner=content_owner[str(content_owner_num)]))
-                        download_report(youtube_reporting, report_url, content_owner_num+"_"+job_id_num+"_"+str(LATEST_DATE)+".txt")
+                        try:
+                            report_url = get_report_url_from_user(retrieve_reports(youtube_reporting,newest_month_BG=newest_month_BG,newest_month_BG_NEXT=newest_month_BG_NEXT,jobId=job_id_Music[str(job_id_num)],onBehalfOfContentOwner=content_owner[str(content_owner_num)]))
+                        except ConnectionAbortedError:
+                            report_url = get_report_url_from_user(retrieve_reports(youtube_reporting,newest_month_BG=newest_month_BG,newest_month_BG_NEXT=newest_month_BG_NEXT,jobId=job_id_Music[str(job_id_num)],onBehalfOfContentOwner=content_owner[str(content_owner_num)]))
+                        download_report(youtube_reporting, report_url, content_owner_num+"_"+job_id_num+"_"+str(newest_month_BG)+".txt")
                         print("---------------------"+content_owner_num+" - "+job_id_num+" DONE! ---------------------")
                 elif content_owner_num == "KIDS":
                     for job_id_num in job_id_Kids:
                         print("--------------------------"+job_id_num+"--------------------------")
-                        report_url = get_report_url_from_user(retrieve_reports(youtube_reporting,LATEST_DATE=LATEST_DATE,LATEST_DATE_next=LATEST_DATE_NEXT,jobId=job_id_Kids[str(job_id_num)],onBehalfOfContentOwner=content_owner[str(content_owner_num)]))
-                        download_report(youtube_reporting, report_url, content_owner_num+"_"+job_id_num+"_"+str(LATEST_DATE)+".txt")
+                        try:
+                            report_url = get_report_url_from_user(retrieve_reports(youtube_reporting,newest_month_BG=newest_month_BG,newest_month_BG_NEXT=newest_month_BG_NEXT,jobId=job_id_Kids[str(job_id_num)],onBehalfOfContentOwner=content_owner[str(content_owner_num)]))
+                        except ConnectionAbortedError:
+                            report_url = get_report_url_from_user(retrieve_reports(youtube_reporting,newest_month_BG=newest_month_BG,newest_month_BG_NEXT=newest_month_BG_NEXT,jobId=job_id_Kids[str(job_id_num)],onBehalfOfContentOwner=content_owner[str(content_owner_num)]))
+                        download_report(youtube_reporting, report_url, content_owner_num+"_"+job_id_num+"_"+str(newest_month_BG)+".txt")
                         print("---------------------"+content_owner_num+" - "+job_id_num+" DONE! ---------------------")
                 elif content_owner_num == "ENT":
                     for job_id_num in job_id_Ent:
                         print("--------------------------"+job_id_num+"--------------------------")
-                        report_url = get_report_url_from_user(retrieve_reports(youtube_reporting,LATEST_DATE=LATEST_DATE,LATEST_DATE_next=LATEST_DATE_NEXT,jobId=job_id_Ent[str(job_id_num)],onBehalfOfContentOwner=content_owner[str(content_owner_num)]))
-                        download_report(youtube_reporting, report_url, content_owner_num+"_"+job_id_num+"_"+str(LATEST_DATE)+".txt")
+                        try:
+                            report_url = get_report_url_from_user(retrieve_reports(youtube_reporting,newest_month_BG=newest_month_BG,newest_month_BG_NEXT=newest_month_BG_NEXT,jobId=job_id_Ent[str(job_id_num)],onBehalfOfContentOwner=content_owner[str(content_owner_num)]))
+                        except ConnectionAbortedError:
+                            report_url = get_report_url_from_user(retrieve_reports(youtube_reporting,newest_month_BG=newest_month_BG,newest_month_BG_NEXT=newest_month_BG_NEXT,jobId=job_id_Ent[str(job_id_num)],onBehalfOfContentOwner=content_owner[str(content_owner_num)]))
+                        download_report(youtube_reporting, report_url, content_owner_num+"_"+job_id_num+"_"+str(newest_month_BG)+".txt")
                         print("---------------------"+content_owner_num+" - "+job_id_num+" DONE! ---------------------")
                 elif content_owner_num == "AFFILIATE":
                     for job_id_num in job_id_Aff:
                         print("--------------------------"+job_id_num+"--------------------------")
-                        report_url = get_report_url_from_user(retrieve_reports(youtube_reporting,LATEST_DATE=LATEST_DATE,LATEST_DATE_next=LATEST_DATE_NEXT,jobId=job_id_Aff[str(job_id_num)],onBehalfOfContentOwner=content_owner[str(content_owner_num)]))
-                        download_report(youtube_reporting, report_url, content_owner_num+"_"+job_id_num+"_"+str(LATEST_DATE)+".txt")
+                        try:
+                            report_url = get_report_url_from_user(retrieve_reports(youtube_reporting,newest_month_BG=newest_month_BG,newest_month_BG_NEXT=newest_month_BG_NEXT,jobId=job_id_Aff[str(job_id_num)],onBehalfOfContentOwner=content_owner[str(content_owner_num)]))
+                        except ConnectionAbortedError:
+                            report_url = get_report_url_from_user(retrieve_reports(youtube_reporting,newest_month_BG=newest_month_BG,newest_month_BG_NEXT=newest_month_BG_NEXT,jobId=job_id_Aff[str(job_id_num)],onBehalfOfContentOwner=content_owner[str(content_owner_num)]))
+                        download_report(youtube_reporting, report_url, content_owner_num+"_"+job_id_num+"_"+str(newest_month_BG)+".txt")
                         print("---------------------"+content_owner_num+" - "+job_id_num+" DONE! ---------------------")
                 elif content_owner_num == "MUSIC-TH":
                     for job_id_num in job_id_Music_TH:
                         print("--------------------------"+job_id_num+"--------------------------")
-                        report_url = get_report_url_from_user(retrieve_reports(youtube_reporting,LATEST_DATE=LATEST_DATE,LATEST_DATE_next=LATEST_DATE_NEXT,jobId=job_id_Music_TH[str(job_id_num)],onBehalfOfContentOwner=content_owner[str(content_owner_num)]))
-                        download_report(youtube_reporting, report_url, content_owner_num+"_"+job_id_num+"_"+str(LATEST_DATE)+".txt")
+                        try:
+                            report_url = get_report_url_from_user(retrieve_reports(youtube_reporting,newest_month_BG=newest_month_BG,newest_month_BG_NEXT=newest_month_BG_NEXT,jobId=job_id_Music_TH[str(job_id_num)],onBehalfOfContentOwner=content_owner[str(content_owner_num)]))
+                        except ConnectionAbortedError:
+                            report_url = get_report_url_from_user(retrieve_reports(youtube_reporting,newest_month_BG=newest_month_BG,newest_month_BG_NEXT=newest_month_BG_NEXT,jobId=job_id_Music_TH[str(job_id_num)],onBehalfOfContentOwner=content_owner[str(content_owner_num)]))
+                        download_report(youtube_reporting, report_url, content_owner_num+"_"+job_id_num+"_"+str(newest_month_BG)+".txt")
                         print("---------------------"+content_owner_num+" - "+job_id_num+" DONE! ---------------------")
                 elif content_owner_num == "ENT-TH":
                     for job_id_num in job_id_Ent_TH:
                         print("--------------------------"+job_id_num+"--------------------------")
-                        report_url = get_report_url_from_user(retrieve_reports(youtube_reporting,LATEST_DATE=LATEST_DATE,LATEST_DATE_next=LATEST_DATE_NEXT,jobId=job_id_Ent_TH[str(job_id_num)],onBehalfOfContentOwner=content_owner[str(content_owner_num)]))
-                        download_report(youtube_reporting, report_url, content_owner_num+"_"+job_id_num+"_"+str(LATEST_DATE)+".txt")
+                        try:
+                            report_url = get_report_url_from_user(retrieve_reports(youtube_reporting,newest_month_BG=newest_month_BG,newest_month_BG_NEXT=newest_month_BG_NEXT,jobId=job_id_Ent_TH[str(job_id_num)],onBehalfOfContentOwner=content_owner[str(content_owner_num)]))
+                        except ConnectionAbortedError:
+                            report_url = get_report_url_from_user(retrieve_reports(youtube_reporting,newest_month_BG=newest_month_BG,newest_month_BG_NEXT=newest_month_BG_NEXT,jobId=job_id_Ent_TH[str(job_id_num)],onBehalfOfContentOwner=content_owner[str(content_owner_num)]))
+                        download_report(youtube_reporting, report_url, content_owner_num+"_"+job_id_num+"_"+str(newest_month_BG)+".txt")
                         print("---------------------"+content_owner_num+" - "+job_id_num+" DONE! ---------------------")
                 elif content_owner_num == "AFF-TH":
                     for job_id_num in job_id_Aff_TH:
                         print("--------------------------"+job_id_num+"--------------------------")
-                        report_url = get_report_url_from_user(retrieve_reports(youtube_reporting,LATEST_DATE=LATEST_DATE,LATEST_DATE_next=LATEST_DATE_NEXT,jobId=job_id_Aff_TH[str(job_id_num)],onBehalfOfContentOwner=content_owner[str(content_owner_num)]))
-                        download_report(youtube_reporting, report_url, content_owner_num+"_"+job_id_num+"_"+str(LATEST_DATE)+".txt")
+                        try:
+                            report_url = get_report_url_from_user(retrieve_reports(youtube_reporting,newest_month_BG=newest_month_BG,newest_month_BG_NEXT=newest_month_BG_NEXT,jobId=job_id_Aff_TH[str(job_id_num)],onBehalfOfContentOwner=content_owner[str(content_owner_num)]))
+                        except ConnectionAbortedError:
+                            report_url = get_report_url_from_user(retrieve_reports(youtube_reporting,newest_month_BG=newest_month_BG,newest_month_BG_NEXT=newest_month_BG_NEXT,jobId=job_id_Aff_TH[str(job_id_num)],onBehalfOfContentOwner=content_owner[str(content_owner_num)]))
+                        download_report(youtube_reporting, report_url, content_owner_num+"_"+job_id_num+"_"+str(newest_month_BG)+".txt")
                         print("---------------------"+content_owner_num+" - "+job_id_num+" DONE! ---------------------")
                 else:
                     print("Does not match content_owner_num")
         except (HttpError,socket.timeout) as e:
-            print('An HTTP error %d occurred:\n %s' % (e.resp.status, e.content))
-# type: ignore
+            print('An HTTP error %d occurred:\n %s' % (e,e.content))
+# # type: ignore

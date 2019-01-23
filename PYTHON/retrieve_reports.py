@@ -1,23 +1,5 @@
 #!/usr/bin/python
 
-###
-#
-# This script retrieves YouTube Reporting API reports. Use cases:
-# 1. If you specify a report URL, the script downloads that report.
-# 2. Otherwise, if you specify a job ID, the script retrieves a list of
-#    available reports for that job and prompts you to select a report.
-#    Then it retrieves that report as in case 1.
-# 3. Otherwise, the list retrieves a list of jobs for the user or,
-#    if specified, the content owner that the user is acting on behalf of.
-#    Then it prompts the user to select a job, and then executes case 2 and
-#    then case 1.
-# Usage examples:
-# python retrieve_reports.py --content_owner_id=<CONTENT_OWNER_ID> --local_file=<LOCAL_FILE>
-# python retrieve_reports.py --content_owner_id=<CONTENT_OWNER_ID> --job_id=<JOB_ID> --local_file=<LOCAL_FILE>
-# python retrieve_reports.py --content_owner_id=<CONTENT_OWNER_ID> --report_url=<REPORT_URL> --local_file=<LOCAL_FILE>
-#
-###
-
 import argparse
 import os
 
@@ -82,7 +64,6 @@ def list_reporting_jobs(youtube_reporting, **kwargs):
         return False
     return True
 
-
 # Call the YouTube Reporting API's reports.list method to retrieve reports created by a job.
 def retrieve_reports(youtube_reporting, **kwargs):
     # Only include the onBehalfOfContentOwner keyword argument if the user
@@ -94,6 +75,7 @@ def retrieve_reports(youtube_reporting, **kwargs):
     print("results: ",results)
     if 'reports' in results and results['reports']:
         reports = results['reports']
+        print(reports)
         for report in reports:
             try:
                 print('Report dates: %s to %s\n       download URL: %s\n'
@@ -136,13 +118,13 @@ if __name__ == '__main__':
     #    Music: UPtu1ivBRvjYBGoz0m0Dfg
     #    Kids: ra8f1uKU-uu9osqlt3jb5g
     #    Ent: ncwbWh1Q1LCsMAeryRBocQ
-    #    Aff: 9C1hXNjkMN_dad11517-31c9-4af5-ad62-d4c986743aec2GO7ARpaplw
+    #    Aff: 9C1hXNjkMN_2GO7ARpaplw
     #    Music-TH: iTE9_S8Uo42n3JzGAiht1w
     #    Ent-TH: RPppPCMzH4DTihKfvR8EeA
     #    Aff-TH: xtl5pd5oPxbhI0dI0Qpkyg
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--content_owner', default='ra8f1uKU-uu9osqlt3jb5g',
+    parser.add_argument('--content_owner', default='xtl5pd5oPxbhI0dI0Qpkyg',
                         help='ID of content owner for which you are retrieving jobs and reports')
     parser.add_argument('--includeSystemManaged', default='True',
                         help='ID of content owner for which you are retrieving jobs and reports')
@@ -157,7 +139,10 @@ if __name__ == '__main__':
     parser.add_argument('--local_file', default='yt_report.txt',
                         help='The name of the local file where the downloaded report will be written.')
     args = parser.parse_args()
-    youtube_reporting = get_authenticated_service()
+    try:
+        youtube_reporting = get_authenticated_service()
+    except AttributeError:
+        youtube_reporting = get_authenticated_service()
     try:
         # If the user has not specified a job ID or report URL, retrieve a list
         # of available jobs and prompt the user to select one.

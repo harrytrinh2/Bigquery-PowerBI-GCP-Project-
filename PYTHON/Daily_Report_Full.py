@@ -64,7 +64,7 @@ def list_reporting_jobs(youtube_reporting, **kwargs):
 
 
 # Call the YouTube Reporting API's reports.list method to retrieve reports created by a job.
-def retrieve_reports(youtube_reporting,LATEST_date,LATEST_date_next, **kwargs):
+def retrieve_reports(youtube_reporting,LATEST_DATE_BQ,LATEST_DATE_BQ_NEXT, **kwargs):
     # Only include the onBehalfOfContentOwner keyword argument if the user
     # set a value for the --content_owner argument.
     kwargs = remove_empty_kwargs(**kwargs)
@@ -79,7 +79,7 @@ def retrieve_reports(youtube_reporting,LATEST_date,LATEST_date_next, **kwargs):
         endTime = ''
         downloadUrl = ''
         for id in reports:
-            if id["startTime"] == str(LATEST_date)+"T08:00:00Z" and id["endTime"] == str(LATEST_date_next) + "T08:00:00Z":
+            if id["startTime"] == str(LATEST_DATE_BQ)+"T08:00:00Z" and id["endTime"] == str(LATEST_DATE_BQ_NEXT) + "T08:00:00Z":
                 jobId = id["jobId"]
                 startTime = id["startTime"]
                 endTime = id["endTime"]
@@ -115,14 +115,14 @@ def get_report_url_from_user(report_url):
     print('You chose "%s" to download.' % report_url)
     return report_url
 
-def get_latest_date(query):
+def get_latest_date_func(query):
     query_job = client.query(query)
     rows = query_job.result()
     for i_row in rows:
-        _LATEST_DATE = i_row.get('NEWEST_DAY')
-        return _LATEST_DATE
+        _LATEST_DATE_BQ = i_row.get('NEWEST_DAY')
+        return _LATEST_DATE_BQ
 
-def content_owner_basic_a3(file_name, table_id, dataset_id ):
+def p_content_owner_basic_a3(file_name, table_id, dataset_id ):
     data = pd.read_table(file_name,sep=",")
     data = data.replace(np.nan,'',regex=True)
     table_ref = client.dataset(dataset_id).table(table_id)
@@ -181,7 +181,7 @@ def content_owner_basic_a3(file_name, table_id, dataset_id ):
             time.sleep(5)
             _arr = []
 
-def owner_estimated_revenue_a1(file_name,table_id, dataset_id ):
+def p_content_owner_estimated_revenue_a1(file_name,table_id, dataset_id ):
     data = pd.read_table(file_name,sep=",")
     data = data.replace(np.nan,'',regex=True)
     table_ref = client.dataset(dataset_id).table(table_id)
@@ -217,7 +217,7 @@ def owner_estimated_revenue_a1(file_name,table_id, dataset_id ):
             print("--- %s seconds ---" % (time.time() - start_time))
             time.sleep(5)
             _arr = []
-def owner_ad_revenue_summary_a1(file_name,table_id, dataset_id ):
+def p_content_owner_ad_revenue_raw_a1(file_name,table_id, dataset_id ):
     data = pd.read_table(file_name,sep=",")
     data = data.replace(np.nan,'',regex=True)
     table_ref = client.dataset(dataset_id).table(table_id)
@@ -261,6 +261,70 @@ def owner_ad_revenue_summary_a1(file_name,table_id, dataset_id ):
             print("--- %s seconds ---" % (time.time() - start_time))
             time.sleep(5)
             _arr = []
+            
+def p_content_owner_video_metadata_a2(file_name,table_id, dataset_id ):
+    data = pd.read_table(file_name,sep=",")
+    data = data.replace(np.nan,'',regex=True)
+    table_ref = client.dataset(dataset_id).table(table_id)
+    table = client.get_table(table_ref)
+    start_time = time.time()
+    _arr = []
+    for i_row in range(len(data)):
+        _video_id = data['video_id'][i_row]
+        _channel_id = data['channel_id'][i_row]
+        _channel_display_name = data['channel_display_name'][i_row]
+        _time_uploaded = data['time_uploaded'][i_row]
+        _time_published = data['time_published'][i_row]
+        _video_title = data['video_title'][i_row]
+        _video_length = data['video_length'][i_row]
+        _views = data['views'][i_row]
+        _comments = data['comments'][i_row]
+        _video_privacy_status = data['video_privacy_status'][i_row]
+        _video_url = data['video_url'][i_row]
+        _category = data['category'][i_row]
+        _embedding_allowed = data['embedding_allowed'][i_row]
+        _ratings_allowed = data['ratings_allowed'][i_row]
+        _comments_allowed = data['comments_allowed'][i_row]
+        _claim_origin = data['claim_origin'][i_row]
+        _content_type = data['content_type'][i_row]
+        _upload_source = data['upload_source'][i_row]
+        _claimed_by_this_owner = data['claimed_by_this_owner'][i_row]
+        _claimed_by_another_owner = data['claimed_by_another_owner'][i_row]
+        _other_owners_claiming = data['other_owners_claiming'][i_row]
+        _offweb_syndicatable = data['offweb_syndicatable'][i_row]
+        _claim_id = data['claim_id'][i_row]
+        _asset_id = data['asset_id'][i_row]
+        _custom_id = data['custom_id'][i_row]
+        _effective_policy = data['effective_policy'][i_row]
+        _third_party_video_id = data['third_party_video_id'][i_row]
+        _third_party_ads_enabled = data['third_party_ads_enabled'][i_row]
+        _display_ads_enabled = data['display_ads_enabled'][i_row]
+        _sponsored_cards_enabled = data['sponsored_cards_enabled'][i_row]
+        _overlay_ads_enabled = data['overlay_ads_enabled'][i_row]
+        _nonskippable_video_ads_enabled = data['nonskippable_video_ads_enabled'][i_row]
+        _long_nonskippable_video_ads_enabled = data['long_nonskippable_video_ads_enabled'][i_row]
+        _skippable_video_ads_enabled = data['skippable_video_ads_enabled'][i_row]
+        _prerolls_enabled = data['prerolls_enabled'][i_row]
+        _postrolls_enabled = data['postrolls_enabled'][i_row]
+        _isrc = data['isrc'][i_row]
+        _eidr = data['eidr'][i_row]
+
+        _arr.append((_video_id,_channel_id,_channel_display_name,_time_uploaded,_time_published,_video_title,_video_length,
+                     _views,_comments,_video_privacy_status,_video_url,
+                     _category,_embedding_allowed,_ratings_allowed,
+                     _comments_allowed,_claim_origin,_content_type,_upload_source,
+                     _claimed_by_this_owner,_claimed_by_another_owner,_other_owners_claiming,_offweb_syndicatable,
+                     _claim_id,_asset_id,_custom_id,_effective_policy,_third_party_video_id,_third_party_ads_enabled,
+                     _display_ads_enabled,_sponsored_cards_enabled,_overlay_ads_enabled,_nonskippable_video_ads_enabled,
+                     _long_nonskippable_video_ads_enabled,_skippable_video_ads_enabled,_prerolls_enabled,_postrolls_enabled,
+                     _isrc,_eidr))
+        if i_row != 0 and i_row % 1500 == 0:
+            errors = client.insert_rows(table, _arr)
+            assert errors == []
+            print(round((float(int(i_row) / float(len(data))) * 100), 2), "%")
+            print("--- %s seconds ---" % (time.time() - start_time))
+            time.sleep(5)
+            _arr = []
 def check_files(path):
     for file in os.listdir(path):
         if os.path.isfile(os.path.join(path, file)):
@@ -292,13 +356,13 @@ if __name__ == '__main__':
 
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "pops-dab1c699446f.json"
     client = bigquery.Client()
-    LATEST_DATE = get_latest_date('''SELECT DATE(MAX(_PARTITIONTIME)) AS `NEWEST_DAY`
+    LATEST_DATE_BQ = get_latest_date_func('''SELECT DATE(MAX(_PARTITIONTIME)) AS `NEWEST_DAY`
                        FROM `pops-204909.yt_kids.p_content_owner_basic_a3_yt_kids`''')
-    LATEST_DATE_NEXT = LATEST_DATE + timedelta(days=1)
-    print(LATEST_DATE,LATEST_DATE_NEXT)
+    LATEST_DATE_BQ_NEXT = LATEST_DATE_BQ + timedelta(days=1)
+    print(LATEST_DATE_BQ,LATEST_DATE_BQ_NEXT)
     check_update = False
     for file in check_files("C:\\Users\\PhucCoi\\Documents\\PYTHON" + "\\"):
-        if str(LATEST_DATE) not in str(file):
+        if str(LATEST_DATE_BQ) not in str(file):
             continue
         else:
             check_update = True
@@ -313,166 +377,165 @@ if __name__ == '__main__':
                     for job_id_num in job_id_Music:
                         print("--------------------------" + job_id_num + "--------------------------")
                         report_url = get_report_url_from_user(
-                            retrieve_reports(youtube_reporting, LATEST_date=LATEST_DATE,
-                                                LATEST_date_next=LATEST_DATE_NEXT, jobId=job_id_Music[str(job_id_num)],
+                            retrieve_reports(youtube_reporting, LATEST_DATE_BQ=LATEST_DATE_BQ,
+                                                LATEST_DATE_BQ_NEXT=LATEST_DATE_BQ_NEXT, jobId=job_id_Music[str(job_id_num)],
                                                 onBehalfOfContentOwner=content_owner[str(content_owner_num)]))
                         download_report(youtube_reporting, report_url,
-                                        content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE) + ".txt")
+                                        content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE_BQ) + ".txt")
                         print(
                             "---------------------" + content_owner_num + " - " + job_id_num + " DONE! ---------------------")
                         for _file in glob.glob(
                                 os.path.join("C:\\Users\\PhucCoi\\Documents\\PYTHON" + "\\", "*.txt")):
-                            if content_owner_num + "_" + "Owner_basic" + "_" + str(LATEST_DATE) is _file:
-                                print("Importing " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE))
-                                content_owner_basic_a3(file_name=_file, table_id="", dataset_id="yt_music")
-                                print("Imported successfully " + content_owner_num + "_" + job_id_num + "_" + str(
-                                    LATEST_DATE))
-                            elif content_owner_num + "_" + "Estimated_revenue" + "_" + str(LATEST_DATE) is _file:
-                                print("Importing " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE))
-                                owner_estimated_revenue_a1(file_name=_file, table_id="", dataset_id="yt_music")
-                                print("Imported successfully " + content_owner_num + "_" + job_id_num + "_" + str(
-                                    LATEST_DATE))
+                            if content_owner_num + "_" + "Owner_basic" + "_" + str(LATEST_DATE_BQ) is _file:
+                                print("Importing " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE_BQ))
+                                p_content_owner_basic_a3(file_name=_file, table_id="", dataset_id="yt_music")
+                                print("Imported successfully " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE_BQ))
+
+                            elif content_owner_num + "_" + "Estimated_revenue" + "_" + str(LATEST_DATE_BQ) is _file:
+                                print("Importing " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE_BQ))
+                                p_content_owner_estimated_revenue_a1(file_name=_file, table_id="", dataset_id="yt_music")
+                                print("Imported successfully " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE_BQ))
                 elif content_owner_num == "KIDS":
                     for job_id_num in job_id_Kids:
                         print("--------------------------" + job_id_num + "--------------------------")
                         report_url = get_report_url_from_user(
-                            retrieve_reports(youtube_reporting, LATEST_date=LATEST_DATE,
-                                                LATEST_date_next=LATEST_DATE_NEXT, jobId=job_id_Kids[str(job_id_num)],
+                            retrieve_reports(youtube_reporting, LATEST_DATE_BQ=LATEST_DATE_BQ,
+                                                LATEST_DATE_BQ_NEXT=LATEST_DATE_BQ_NEXT, jobId=job_id_Kids[str(job_id_num)],
                                                 onBehalfOfContentOwner=content_owner[str(content_owner_num)]))
                         download_report(youtube_reporting, report_url,
-                                        content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE) + ".txt")
+                                        content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE_BQ) + ".txt")
                         print(
                             "---------------------" + content_owner_num + " - " + job_id_num + " DONE! ---------------------")
                         for _file in glob.glob(
                                 os.path.join("C:\\Users\\PhucCoi\\Documents\\PYTHON" + "\\", "*.txt")):
-                            if content_owner_num + "_" + "Owner_basic" + "_" + str(LATEST_DATE) is _file:
-                                print("Importing " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE))
-                                content_owner_basic_a3(file_name=_file, table_id="", dataset_id="yt_music")
-                                print("Imported successfully " + content_owner_num + "_" + job_id_num + "_" + str(
-                                    LATEST_DATE))
-                            elif content_owner_num + "_" + "Estimated_revenue" + "_" + str(LATEST_DATE) is _file:
-                                print("Importing " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE))
-                                owner_estimated_revenue_a1(file_name=_file, table_id="", dataset_id="yt_music")
-                                print("Imported successfully " + content_owner_num + "_" + job_id_num + "_" + str(
-                                    LATEST_DATE))
+                            if content_owner_num + "_" + "Owner_basic" + "_" + str(LATEST_DATE_BQ) is _file:
+                                print("Importing " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE_BQ))
+                                p_content_owner_basic_a3(file_name=_file, table_id="", dataset_id="yt_music")
+                                print("Imported successfully " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE_BQ))
+
+                            elif content_owner_num + "_" + "Estimated_revenue" + "_" + str(LATEST_DATE_BQ) is _file:
+                                print("Importing " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE_BQ))
+                                p_content_owner_estimated_revenue_a1(file_name=_file, table_id="", dataset_id="yt_music")
+                                print("Imported successfully " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE_BQ))
+
                 elif content_owner_num == "ENT":
                     for job_id_num in job_id_Ent:
                         print("--------------------------" + job_id_num + "--------------------------")
                         report_url = get_report_url_from_user(
-                            retrieve_reports(youtube_reporting, LATEST_date=LATEST_DATE,
-                                                LATEST_date_next=LATEST_DATE_NEXT, jobId=job_id_Ent[str(job_id_num)],
+                            retrieve_reports(youtube_reporting, LATEST_DATE_BQ=LATEST_DATE_BQ,
+                                                LATEST_DATE_BQ_NEXT=LATEST_DATE_BQ_NEXT, jobId=job_id_Ent[str(job_id_num)],
                                                 onBehalfOfContentOwner=content_owner[str(content_owner_num)]))
                         download_report(youtube_reporting, report_url,
-                                        content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE) + ".txt")
+                                        content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE_BQ) + ".txt")
                         print(
                             "---------------------" + content_owner_num + " - " + job_id_num + " DONE! ---------------------")
                         for _file in glob.glob(
                                 os.path.join("C:\\Users\\PhucCoi\\Documents\\PYTHON" + "\\", "*.txt")):
-                            if content_owner_num + "_" + "Owner_basic" + "_" + str(LATEST_DATE) is _file:
-                                print("Importing " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE))
-                                content_owner_basic_a3(file_name=_file, table_id="", dataset_id="yt_music")
-                                print("Imported successfully " + content_owner_num + "_" + job_id_num + "_" + str(
-                                    LATEST_DATE))
-                            elif content_owner_num + "_" + "Estimated_revenue" + "_" + str(LATEST_DATE) is _file:
-                                print("Importing " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE))
-                                owner_estimated_revenue_a1(file_name=_file, table_id="", dataset_id="yt_music")
-                                print("Imported successfully " + content_owner_num + "_" + job_id_num + "_" + str(
-                                    LATEST_DATE))
+                            if content_owner_num + "_" + "Owner_basic" + "_" + str(LATEST_DATE_BQ) is _file:
+                                print("Importing " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE_BQ))
+                                p_content_owner_basic_a3(file_name=_file, table_id="", dataset_id="yt_music")
+                                print("Imported successfully " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE_BQ))
+
+                            elif content_owner_num + "_" + "Estimated_revenue" + "_" + str(LATEST_DATE_BQ) is _file:
+                                print("Importing " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE_BQ))
+                                p_content_owner_estimated_revenue_a1(file_name=_file, table_id="", dataset_id="yt_music")
+                                print("Imported successfully " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE_BQ))
+
                 elif content_owner_num == "AFFILIATE":
                     for job_id_num in job_id_Aff:
                         print("--------------------------" + job_id_num + "--------------------------")
                         report_url = get_report_url_from_user(
-                            retrieve_reports(youtube_reporting, LATEST_date=LATEST_DATE,
-                                                LATEST_date_next=LATEST_DATE_NEXT, jobId=job_id_Aff[str(job_id_num)],
+                            retrieve_reports(youtube_reporting, LATEST_DATE_BQ=LATEST_DATE_BQ,
+                                                LATEST_DATE_BQ_NEXT=LATEST_DATE_BQ_NEXT, jobId=job_id_Aff[str(job_id_num)],
                                                 onBehalfOfContentOwner=content_owner[str(content_owner_num)]))
                         download_report(youtube_reporting, report_url,
-                                        content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE) + ".txt")
+                                        content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE_BQ) + ".txt")
                         print(
                             "---------------------" + content_owner_num + " - " + job_id_num + " DONE! ---------------------")
                         for _file in glob.glob(
                                 os.path.join("C:\\Users\\PhucCoi\\Documents\\PYTHON" + "\\", "*.txt")):
-                            if content_owner_num + "_" + "Owner_basic" + "_" + str(LATEST_DATE) is _file:
-                                print("Importing " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE))
-                                content_owner_basic_a3(file_name=_file, table_id="", dataset_id="yt_music")
-                                print("Imported successfully " + content_owner_num + "_" + job_id_num + "_" + str(
-                                    LATEST_DATE))
-                            elif content_owner_num + "_" + "Estimated_revenue" + "_" + str(LATEST_DATE) is _file:
-                                print("Importing " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE))
-                                owner_estimated_revenue_a1(file_name=_file, table_id="", dataset_id="yt_music")
-                                print("Imported successfully " + content_owner_num + "_" + job_id_num + "_" + str(
-                                    LATEST_DATE))
+                            if content_owner_num + "_" + "Owner_basic" + "_" + str(LATEST_DATE_BQ) is _file:
+                                print("Importing " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE_BQ))
+                                p_content_owner_basic_a3(file_name=_file, table_id="", dataset_id="yt_music")
+                                print("Imported successfully " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE_BQ))
+
+                            elif content_owner_num + "_" + "Estimated_revenue" + "_" + str(LATEST_DATE_BQ) is _file:
+                                print("Importing " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE_BQ))
+                                p_content_owner_estimated_revenue_a1(file_name=_file, table_id="", dataset_id="yt_music")
+                                print("Imported successfully " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE_BQ))
+
                 elif content_owner_num == "MUSIC-TH":
                     for job_id_num in job_id_Music_TH:
                         print("--------------------------" + job_id_num + "--------------------------")
                         report_url = get_report_url_from_user(
-                            retrieve_reports(youtube_reporting, LATEST_date=LATEST_DATE,
-                                                LATEST_date_next=LATEST_DATE_NEXT,
+                            retrieve_reports(youtube_reporting, LATEST_DATE_BQ=LATEST_DATE_BQ,
+                                                LATEST_DATE_BQ_NEXT=LATEST_DATE_BQ_NEXT,
                                                 jobId=job_id_Music_TH[str(job_id_num)],
                                                 onBehalfOfContentOwner=content_owner[str(content_owner_num)]))
                         download_report(youtube_reporting, report_url,
-                                        content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE) + ".txt")
+                                        content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE_BQ) + ".txt")
                         print(
                             "---------------------" + content_owner_num + " - " + job_id_num + " DONE! ---------------------")
                         for _file in glob.glob(
                                 os.path.join("C:\\Users\\PhucCoi\\Documents\\PYTHON" + "\\", "*.txt")):
-                            if content_owner_num + "_" + "Owner_basic" + "_" + str(LATEST_DATE) is _file:
-                                print("Importing " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE))
-                                content_owner_basic_a3(file_name=_file, table_id="", dataset_id="yt_music")
-                                print("Imported successfully " + content_owner_num + "_" + job_id_num + "_" + str(
-                                    LATEST_DATE))
-                            elif content_owner_num + "_" + "Estimated_revenue" + "_" + str(LATEST_DATE) is _file:
-                                print("Importing " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE))
-                                owner_estimated_revenue_a1(file_name=_file, table_id="", dataset_id="yt_music")
-                                print("Imported successfully " + content_owner_num + "_" + job_id_num + "_" + str(
-                                    LATEST_DATE))
+                            if content_owner_num + "_" + "Owner_basic" + "_" + str(LATEST_DATE_BQ) is _file:
+                                print("Importing " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE_BQ))
+                                p_content_owner_basic_a3(file_name=_file, table_id="", dataset_id="yt_music")
+                                print("Imported successfully " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE_BQ))
+
+                            elif content_owner_num + "_" + "Estimated_revenue" + "_" + str(LATEST_DATE_BQ) is _file:
+                                print("Importing " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE_BQ))
+                                p_content_owner_estimated_revenue_a1(file_name=_file, table_id="", dataset_id="yt_music")
+                                print("Imported successfully " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE_BQ))
+
                 elif content_owner_num == "ENT-TH":
                     for job_id_num in job_id_Ent_TH:
                         print("--------------------------" + job_id_num + "--------------------------")
                         report_url = get_report_url_from_user(
-                            retrieve_reports(youtube_reporting, LATEST_date=LATEST_DATE,
-                                                LATEST_date_next=LATEST_DATE_NEXT,
+                            retrieve_reports(youtube_reporting, LATEST_DATE_BQ=LATEST_DATE_BQ,
+                                                LATEST_DATE_BQ_NEXT=LATEST_DATE_BQ_NEXT,
                                                 jobId=job_id_Ent_TH[str(job_id_num)],
                                                 onBehalfOfContentOwner=content_owner[str(content_owner_num)]))
                         download_report(youtube_reporting, report_url,
-                                        content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE) + ".txt")
+                                        content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE_BQ) + ".txt")
                         print(
                             "---------------------" + content_owner_num + " - " + job_id_num + " DONE! ---------------------")
                         for _file in glob.glob(
                                 os.path.join("C:\\Users\\PhucCoi\\Documents\\PYTHON" + "\\", "*.txt")):
-                            if content_owner_num + "_" + "Owner_basic" + "_" + str(LATEST_DATE) is _file:
-                                print("Importing " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE))
-                                content_owner_basic_a3(file_name=_file, table_id="", dataset_id="yt_music")
-                                print("Imported successfully " + content_owner_num + "_" + job_id_num + "_" + str(
-                                    LATEST_DATE))
-                            elif content_owner_num + "_" + "Estimated_revenue" + "_" + str(LATEST_DATE) is _file:
-                                print("Importing " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE))
-                                owner_estimated_revenue_a1(file_name=_file, table_id="", dataset_id="yt_music")
-                                print("Imported successfully " + content_owner_num + "_" + job_id_num + "_" + str(
-                                    LATEST_DATE))
+                            if content_owner_num + "_" + "Owner_basic" + "_" + str(LATEST_DATE_BQ) is _file:
+                                print("Importing " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE_BQ))
+                                p_content_owner_basic_a3(file_name=_file, table_id="", dataset_id="yt_music")
+                                print("Imported successfully " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE_BQ))
+
+                            elif content_owner_num + "_" + "Estimated_revenue" + "_" + str(LATEST_DATE_BQ) is _file:
+                                print("Importing " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE_BQ))
+                                p_content_owner_estimated_revenue_a1(file_name=_file, table_id="", dataset_id="yt_music")
+                                print("Imported successfully " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE_BQ))
+
                 elif content_owner_num == "AFF-TH":
                     for job_id_num in job_id_Aff_TH:
                         print("--------------------------" + job_id_num + "--------------------------")
                         report_url = get_report_url_from_user(
-                            retrieve_reports(youtube_reporting, LATEST_date=LATEST_DATE,
-                                                LATEST_date_next=LATEST_DATE_NEXT,
+                            retrieve_reports(youtube_reporting, LATEST_DATE_BQ=LATEST_DATE_BQ,
+                                                LATEST_DATE_BQ_NEXT=LATEST_DATE_BQ_NEXT,
                                                 jobId=job_id_Aff_TH[str(job_id_num)],
                                                 onBehalfOfContentOwner=content_owner[str(content_owner_num)]))
                         download_report(youtube_reporting, report_url,
-                                        content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE) + ".txt")
+                                        content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE_BQ) + ".txt")
                         print(
                             "---------------------" + content_owner_num + " - " + job_id_num + " DONE! ---------------------")
                         for _file in glob.glob(
                                 os.path.join("C:\\Users\\PhucCoi\\Documents\\PYTHON" + "\\", "*.txt")):
-                            if content_owner_num + "_" + "Owner_basic" + "_" + str(LATEST_DATE) is _file:
-                                print("Importing " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE))
-                                content_owner_basic_a3(file_name=_file, table_id="", dataset_id="yt_music")
-                                print("Imported successfully " + content_owner_num + "_" + job_id_num + "_" + str(
-                                    LATEST_DATE))
-                            elif content_owner_num + "_" + "Estimated_revenue" + "_" + str(LATEST_DATE) is _file:
-                                print("Importing " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE))
-                                owner_estimated_revenue_a1(file_name=_file, table_id="", dataset_id="yt_music")
-                                print("Imported successfully " + content_owner_num + "_" + job_id_num + "_" + str(
-                                    LATEST_DATE))
+                            if content_owner_num + "_" + "Owner_basic" + "_" + str(LATEST_DATE_BQ) is _file:
+                                print("Importing " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE_BQ))
+                                p_content_owner_basic_a3(file_name=_file, table_id="", dataset_id="yt_music")
+                                print("Imported successfully " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE_BQ))
+
+                            elif content_owner_num + "_" + "Estimated_revenue" + "_" + str(LATEST_DATE_BQ) is _file:
+                                print("Importing " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE_BQ))
+                                p_content_owner_estimated_revenue_a1(file_name=_file, table_id="", dataset_id="yt_music")
+                                print("Imported successfully " + content_owner_num + "_" + job_id_num + "_" + str(LATEST_DATE_BQ))
+
                 else:
                     print("Does not match any tables :(")
         except (HttpError, socket.timeout) as e:
