@@ -18,7 +18,16 @@ import pandas as pd
 import numpy as np
 import httplib2
 from oauth2client import client, GOOGLE_TOKEN_URI
+from datetime import datetime as dt
 
+'''{
+  "access_token": "ya29.GlubBs2CfFIMOsQRkqSxgAyff5rQ8aiu1IWI6j2Ery5MsuL4VOnr9s7owicF0C_vgM8USc1IDY03jXxWlQn7dCjn2MMa5Gzh6LWZlxqLdLnU2ib8YXPR8nialM1F", 
+  "scope": "https://www.googleapis.com/auth/yt-analytics-monetary.readonly", 
+  "token_type": "Bearer", 
+  "expires_in": 3600, 
+  "refresh_token": "1/JqgakzyJwsSnyBijkgXdb4Aq0n1IEhVig09kla5qCqE"
+}
+'''
 CLIENT_SECRETS_FILE = "client_secret_929791903032-hpdm8djidqd8o5nqg2gk66efau34ea6q.apps.googleusercontent.com.json"
 SCOPES = ['https://www.googleapis.com/auth/yt-analytics-monetary.readonly']
 API_SERVICE_NAME = 'youtubereporting'
@@ -36,11 +45,11 @@ credentials = client.OAuth2Credentials(
     token_uri = "https://oauth2.googleapis.com/token",
     scopes= "https://www.googleapis.com/auth/yt-analytics-monetary.readonly",
     user_agent="Bearer",
-    revoke_uri= None)
+    revoke_uri= None
+)
+
 # Authorize the request and store authorization credentials.
 def get_authenticated_service():
-    # flow = InstalledAppFlow.from_client_secrets_file(CLIENT_SECRETS_FILE, SCOPES)
-    # credentials = flow.run_local_server()
     return build(API_SERVICE_NAME, API_VERSION, credentials=credentials)
 
 # Remove keyword arguments that are not set.
@@ -88,6 +97,28 @@ def retrieve_reports(youtube_reporting,lastest_date_BQ, **kwargs):
             _dict_retrieve[_startTime_final[index]] = [_createTime_final[index], _downloadUrl_final[index]]
         return _dict_retrieve
 
+def check_retrieve_reports(youtube_reporting,lastest_date_BQ, **kwargs):
+    # Only include the onBehalfOfContentOwner keyword argument if the user
+    # set a value for the --content_owner argument.
+    kwargs = remove_empty_kwargs(**kwargs)
+
+    # Retrieve available reports for the selected job.
+    results = youtube_reporting.jobs().reports().list(**kwargs).execute()
+    downloadUrl = ''
+    if 'reports' in results and results['reports']:
+        reports = results['reports']
+        _startTime = []
+        _createTime = []
+        _downloadUrl = []
+        for i in reports:
+            _startTime.append(dt.strptime(i['startTime'].split("T")[0], "%Y-%m-%d"))
+            _createTime.append(dt.strptime(i['createTime'].split("T")[0], "%Y-%m-%d"))
+            _downloadUrl.append(i['downloadUrl'])
+        for id in reports:
+            if id["startTime"] == str(lastest_date_BQ).split(" ")[0]+"T08:00:00Z":
+                downloadUrl = id["downloadUrl"]
+    return downloadUrl
+
 # Call the YouTube Reporting API's media.download method to download the report.
 def download_report(youtube_reporting, report_url, local_file):
     request = youtube_reporting.media().download(
@@ -109,7 +140,11 @@ def get_latest_date_func(content_owner,table):
     rows = query_job.result()
     for i_row in rows:
         _lastest_date_BQ = i_row.get('lastest_date_BQ')
-        return datetime(_lastest_date_BQ.year,_lastest_date_BQ.month,_lastest_date_BQ.day)
+        try:
+            _date = datetime(_lastest_date_BQ.year, _lastest_date_BQ.month, _lastest_date_BQ.day)
+            return _date
+        except AttributeError:
+            pass
 
 def check_files(path):
     for file in os.listdir(path):
@@ -134,10 +169,7 @@ def remove_if_not_complete(content_owner,table,_date):
 def check_upload(file_name,content_owner,table,_date):
     data = pd.read_table(file_name, sep=",")
     data = data.replace(np.nan, '', regex=True)
-    print(file_name,_date.replace("-",""))
     try:
-        a = '''SELECT count(*) as `row_number` FROM `pops-204909.''' + content_owner + "." + table + "`" + " WHERE date='"+_date.replace("-","")+"'"
-        print(a)
         query_job = client.query('''SELECT count(*) as `row_number` FROM `pops-204909.''' + content_owner + "." + table + "`" + " WHERE date='"+_date.replace("-","")+"'")
         rows = query_job.result()
         for i_row in rows:
@@ -149,6 +181,7 @@ def check_upload(file_name,content_owner,table,_date):
                 remove_if_not_complete(content_owner=content_owner,table=table,_date=_date)
     except (ValueError,KeyError) as e:
         print("Could not remove the file!")
+
 def p_content_owner_basic_a3(file_name, dataset_id,_content_owner,_table,_date):
     data = pd.read_table(file_name, sep=",")
     data = data.replace(np.nan, '', regex=True)
@@ -258,6 +291,7 @@ def p_content_owner_estimated_revenue_a1(file_name, dataset_id,_content_owner,_t
         print("------- Done! 100% Uploaded. -------")
         time.sleep(5)
         _arr = []
+
 def p_content_owner_ad_revenue_raw_a1(file_name, dataset_id,_content_owner,_table,_date):
     data = pd.read_table(file_name, sep=",")
     data = data.replace(np.nan, '', regex=True)
@@ -303,8 +337,8 @@ def p_content_owner_ad_revenue_raw_a1(file_name, dataset_id,_content_owner,_tabl
         if i_row != 0 and i_row % 1500 == 0:
             errors = client.insert_rows(table, _arr)
             assert errors == []
-            print(round((float(int(i_row) / float(len(data))) * 100), 2), "%",
-                  "------- %s seconds -------" % round((time.time() - start_time), 2))
+            print("------- ",round((float(int(i_row) / float(len(data))) * 100), 2), "%",
+                  " took %s seconds -------" % round((time.time() - start_time), 2))
             time.sleep(5)
             _arr = []
     if len(_arr) > 0:
@@ -386,11 +420,27 @@ def p_content_owner_video_metadata_a2(file_name, dataset_id,_content_owner,_tabl
 
 def daily_reports(content_owner,_content_owner,_table,_jobid):
     # TODO: DAILY REPORTS
-    lastest_date_BQ = get_latest_date_func(content_owner=_content_owner, table=_table)
     print("--------------------------" + _table + "--------------------------")
-    _retrieve_reports = retrieve_reports(youtube_reporting, lastest_date_BQ=lastest_date_BQ,
+    print("------------- Check Lastest data on Big Query -------------")
+    lastest_date_BQ_check = get_latest_date_func(content_owner=_content_owner, table=_table)
+    check_report_url = check_retrieve_reports(youtube_reporting,lastest_date_BQ=lastest_date_BQ_check,
                                          jobId=_jobid[str(_table)],
                                          onBehalfOfContentOwner=content_owners[str(content_owner)])
+    download_report(youtube_reporting,check_report_url,
+                    _content_owner + "_" + _table + "_" + str(lastest_date_BQ_check).split(" ")[0] + ".txt")
+    for _file in check_files(FOLDER_PATH):
+        if str(_file) == _content_owner + "_" + _table + "_" + str(lastest_date_BQ_check).split(" ")[0] + ".txt":
+            check_upload(file_name=_file, content_owner=_content_owner, table=_table, _date=str(lastest_date_BQ_check).split(" ")[0])
+    print("------------------------- Updating newest data -------------------------")
+    lastest_date_BQ = get_latest_date_func(content_owner=_content_owner, table=_table)
+    try:
+        _retrieve_reports = retrieve_reports(youtube_reporting, lastest_date_BQ=lastest_date_BQ,
+                                         jobId=_jobid[str(_table)],
+                                         onBehalfOfContentOwner=content_owners[str(content_owner)])
+    except (AttributeError,TypeError) as e:
+        _retrieve_reports = retrieve_reports(youtube_reporting, lastest_date_BQ=lastest_date_BQ_check - timedelta(days=1),
+                                             jobId=_jobid[str(_table)],
+                                             onBehalfOfContentOwner=content_owners[str(content_owner)])
     if bool(_retrieve_reports) == True:
         print("----- The newest_date_on_BQ: {0} but {1} on API ".format(lastest_date_BQ, max(_retrieve_reports.keys())))
         print("---------- ", len(_retrieve_reports), " reports need to retrieve ----------")
@@ -482,7 +532,7 @@ if __name__ == '__main__':
     FOLDER_PATH = "C:\\Users\\PhucCoi\\Documents\\PYTHON" + "\\"
     youtube_reporting = get_authenticated_service()
     # "yt_music":"UPtu1ivBRvjYBGoz0m0Dfg","yt_kids":"ra8f1uKU-uu9osqlt3jb5g","yt_entertainment":"ncwbWh1Q1LCsMAeryRBocQ","yt_affiliate":"9C1hXNjkMN_2GO7ARpaplw","yt_th_music":"iTE9_S8Uo42n3JzGAiht1w","yt_th_entertainment":"RPppPCMzH4DTihKfvR8EeA", "yt_th_affiliate":"xtl5pd5oPxbhI0dI0Qpkyg"
-    content_owners = {"yt_kids":"ra8f1uKU-uu9osqlt3jb5g"}
+    content_owners = {"yt_th_entertainment":"RPppPCMzH4DTihKfvR8EeA"}
     yt_music = {
                     # "p_content_owner_basic_a3_yt_music": "04cda439-5fd1-4722-82cf-75bb311f0bdc",
                     # "p_content_owner_estimated_revenue_a1_yt_music": "05122e5b-94b0-4368-945e-451b23451cae",
@@ -490,15 +540,17 @@ if __name__ == '__main__':
                        # "p_content_owner_ad_revenue_raw_a1_yt_music":"58411f62-d342-4b81-ab7e-5fe4c479808f"
                 }
 
-    yt_kids = {"p_content_owner_basic_a3_yt_kids": "1d2b93e9-7de3-4e88-876a-831d3d0e1e83",
-                   "p_content_owner_estimated_revenue_a1_yt_kids": "0ef9cb40-039c-4c75-aa84-b96e60b0029d",
-                   "p_content_owner_video_metadata_a2_yt_kids": "69749123-641b-43b2-a4f1-30494c6740d3"
-                       # "p_content_owner_ad_revenue_raw_a1_yt_kids":"7ab6eeee-2cb4-4668-a3be-03ed125b7eb4"
+    yt_kids = {
+                   # "p_content_owner_basic_a3_yt_kids": "1d2b93e9-7de3-4e88-876a-831d3d0e1e83",
+                   # "p_content_owner_estimated_revenue_a1_yt_kids": "0ef9cb40-039c-4c75-aa84-b96e60b0029d",
+                   # "p_content_owner_video_metadata_a2_yt_kids": "69749123-641b-43b2-a4f1-30494c6740d3"
+                   "p_content_owner_ad_revenue_raw_a1_yt_kids":"7ab6eeee-2cb4-4668-a3be-03ed125b7eb4"
                }
 
-    yt_entertainment = {"p_content_owner_basic_a3_yt_entertainment": "c071a36c-a9ef-4ef7-8624-4f7fbeac0702",
-                  "p_content_owner_estimated_revenue_a1_yt_entertainment": "9955d3f3-8648-4334-8c9e-5722f6999282",
-                  "p_content_owner_video_metadata_a2_yt_entertainment": "8c38616b-358c-401b-8d4f-e9791cc50281"
+    yt_entertainment = {
+                        # "p_content_owner_basic_a3_yt_entertainment": "c071a36c-a9ef-4ef7-8624-4f7fbeac0702",
+                        # "p_content_owner_estimated_revenue_a1_yt_entertainment": "9955d3f3-8648-4334-8c9e-5722f6999282",
+                    "p_content_owner_video_metadata_a2_yt_entertainment": "8c38616b-358c-401b-8d4f-e9791cc50281"
                        # "p_content_owner_ad_revenue_raw_a1_yt_entertainment":"101b91ce-92a1-4ded-a2db-0de96af565e0"
                         }
 
@@ -515,9 +567,10 @@ if __name__ == '__main__':
                        # "p_content_owner_ad_revenue_raw_a1_yt_th_music":"d16b91f2-5885-4fbb-9ee6-3c3994decc37"
                    }
 
-    yt_th_entertainment = {"p_content_owner_basic_a3_yt_th_entertainment": "45ffe8a1-9213-44d4-8d06-16102f163801",
-                     "p_content_owner_estimated_revenue_a1_yt_th_entertainment": "9d8b729a-4d0f-46c4-a17e-b83c806b5621",
-                     "p_content_owner_video_metadata_a2_yt_th_entertainment": "0764aba7-687c-4ab0-a462-11d3c1743b53"
+    yt_th_entertainment = {
+                     # "p_content_owner_basic_a3_yt_th_entertainment": "45ffe8a1-9213-44d4-8d06-16102f163801",
+                     # "p_content_owner_estimated_revenue_a1_yt_th_entertainment": "9d8b729a-4d0f-46c4-a17e-b83c806b5621"
+                      "p_content_owner_video_metadata_a2_yt_th_entertainment": "0764aba7-687c-4ab0-a462-11d3c1743b53"
                      #   "p_content_owner_ad_revenue_raw_a1_yt_th_entertainment":"10a19692-9ad8-45ef-9ceb-cdd914337818"
                     }
 
