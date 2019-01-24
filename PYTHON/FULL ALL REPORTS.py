@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import argparse
 import os
 import google.oauth2.credentials
 import google_auth_oauthlib.flow
@@ -17,19 +16,32 @@ from datetime import datetime
 import time
 import pandas as pd
 import numpy as np
-
+import httplib2
+from oauth2client import client, GOOGLE_TOKEN_URI
 
 CLIENT_SECRETS_FILE = "client_secret_929791903032-hpdm8djidqd8o5nqg2gk66efau34ea6q.apps.googleusercontent.com.json"
 SCOPES = ['https://www.googleapis.com/auth/yt-analytics-monetary.readonly']
 API_SERVICE_NAME = 'youtubereporting'
 API_VERSION = 'v1'
-
+CLIENT_ID = "929791903032-hpdm8djidqd8o5nqg2gk66efau34ea6q.apps.googleusercontent.com"
+CLIENT_SECRET = "YHDd4FrEFtqjhIkZhprwUMuy"
+REFRESH_TOKEN = "1/RinJvsjGrAUvBj3QoHsHMvopmsf-7U0x1KCvhpo0cq0"
+ACCESS_TOKEN = "ya29.GlubBs2CfFIMOsQRkqSxgAyff5rQ8aiu1IWI6j2Ery5MsuL4VOnr9s7owicF0C_vgM8USc1IDY03jXxWlQn7dCjn2MMa5Gzh6LWZlxqLdLnU2ib8YXPR8nialM1F"
+credentials = client.OAuth2Credentials(
+    access_token = ACCESS_TOKEN,
+    client_id = CLIENT_ID,
+    client_secret = CLIENT_SECRET,
+    refresh_token = REFRESH_TOKEN,
+    token_expiry = 3600,
+    token_uri = "https://oauth2.googleapis.com/token",
+    scopes= "https://www.googleapis.com/auth/yt-analytics-monetary.readonly",
+    user_agent="Bearer",
+    revoke_uri= None)
 # Authorize the request and store authorization credentials.
 def get_authenticated_service():
-    flow = InstalledAppFlow.from_client_secrets_file(CLIENT_SECRETS_FILE, SCOPES)
-    credentials = flow.run_local_server()
+    # flow = InstalledAppFlow.from_client_secrets_file(CLIENT_SECRETS_FILE, SCOPES)
+    # credentials = flow.run_local_server()
     return build(API_SERVICE_NAME, API_VERSION, credentials=credentials)
-
 
 # Remove keyword arguments that are not set.
 def remove_empty_kwargs(**kwargs):
@@ -134,9 +146,7 @@ def check_upload(file_name,content_owner,table,_date):
             if int(_newest_month_BG) == len(data):
                 os.remove(file_name)
             else:
-                #remove_if_not_complete(content_owner=content_owner,table=table,_date=_date)
-                #print("Deleted rows!")
-                print("Query ra bang 0")
+                remove_if_not_complete(content_owner=content_owner,table=table,_date=_date)
     except (ValueError,KeyError) as e:
         print("Could not remove the file!")
 def p_content_owner_basic_a3(file_name, dataset_id,_content_owner,_table,_date):
@@ -350,7 +360,7 @@ def p_content_owner_video_metadata_a2(file_name, dataset_id,_content_owner,_tabl
         _postrolls_enabled = data['postrolls_enabled'][i_row]
         _isrc = data['isrc'][i_row]
         _eidr = data['eidr'][i_row]
-        _date = _date
+        _date = _date.replace("-","")
         _arr.append((str(_date),str(_video_id), str(_channel_id), str(_channel_display_name), str(_time_uploaded), str(_time_published), str(_video_title),
                      int(_video_length),int(_views), int(_comments), str(_video_privacy_status), str(_video_url),
                      str(_category), str(_embedding_allowed), str(_ratings_allowed),
@@ -370,7 +380,7 @@ def p_content_owner_video_metadata_a2(file_name, dataset_id,_content_owner,_tabl
     if len(_arr) > 0:
         errors = client.insert_rows(table, _arr)
         assert errors == []
-        print("------- Done! 100% Uploaded. -------")
+        print("------- Done! 100% uploaded. -------")
         time.sleep(5)
         _arr = []
 
@@ -429,7 +439,6 @@ def daily_reports(content_owner,_content_owner,_table,_jobid):
     else:
         print("-----" + _content_owner + "-" + _table + " is up to date! " + "-----" )
 
-
 def monthly_reports(_content_owner,_table,_jobid):
     print("----------------- Checking Monthly Report --------------------")
     newest_month_BG = get_lastest_month_func(content_owner=_content_owner, table=_table)
@@ -473,9 +482,10 @@ if __name__ == '__main__':
     FOLDER_PATH = "C:\\Users\\PhucCoi\\Documents\\PYTHON" + "\\"
     youtube_reporting = get_authenticated_service()
     # "yt_music":"UPtu1ivBRvjYBGoz0m0Dfg","yt_kids":"ra8f1uKU-uu9osqlt3jb5g","yt_entertainment":"ncwbWh1Q1LCsMAeryRBocQ","yt_affiliate":"9C1hXNjkMN_2GO7ARpaplw","yt_th_music":"iTE9_S8Uo42n3JzGAiht1w","yt_th_entertainment":"RPppPCMzH4DTihKfvR8EeA", "yt_th_affiliate":"xtl5pd5oPxbhI0dI0Qpkyg"
-    content_owners = {"yt_affiliate":"9C1hXNjkMN_2GO7ARpaplw"}
-    yt_music = {"p_content_owner_basic_a3_yt_music": "04cda439-5fd1-4722-82cf-75bb311f0bdc",
-                    "p_content_owner_estimated_revenue_a1_yt_music": "05122e5b-94b0-4368-945e-451b23451cae",
+    content_owners = {"yt_kids":"ra8f1uKU-uu9osqlt3jb5g"}
+    yt_music = {
+                    # "p_content_owner_basic_a3_yt_music": "04cda439-5fd1-4722-82cf-75bb311f0bdc",
+                    # "p_content_owner_estimated_revenue_a1_yt_music": "05122e5b-94b0-4368-945e-451b23451cae",
                     "p_content_owner_video_metadata_a2_yt_music": "dad11517-31c9-4af5-ad62-d4c986743aec"
                        # "p_content_owner_ad_revenue_raw_a1_yt_music":"58411f62-d342-4b81-ab7e-5fe4c479808f"
                 }

@@ -10,6 +10,13 @@ from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaIoBaseDownload
 from google_auth_oauthlib.flow import InstalledAppFlow
 from io import FileIO
+import httplib2
+from oauth2client import client, GOOGLE_TOKEN_URI
+
+CLIENT_SECRETS_FILE = "client_secret_929791903032-hpdm8djidqd8o5nqg2gk66efau34ea6q.apps.googleusercontent.com.json"
+SCOPES = ['https://www.googleapis.com/auth/yt-analytics-monetary.readonly']
+API_SERVICE_NAME = 'youtubereporting'
+API_VERSION = 'v1'
 
 # The CLIENT_SECRETS_FILE variable specifies the name of a file that contains
 # the OAuth 2.0 information for this application, including its client_id and
@@ -21,18 +28,27 @@ from io import FileIO
 #   https://developers.google.com/youtube/v3/guides/authentication
 # For more information about the client_secrets.json file format, see:
 #   https://developers.google.com/api-client-library/python/guide/aaa_client_secrets
-CLIENT_SECRETS_FILE = "client_secret_929791903032-hpdm8djidqd8o5nqg2gk66efau34ea6q.apps.googleusercontent.com.json"
-# This OAuth 2.0 access scope allows for read access to YouTube Analytics
-# monetary reports for the authenticated user's account. Any request that
-# retrieves earnings or ad performance metrics must use this scope.
-SCOPES = ['https://www.googleapis.com/auth/yt-analytics-monetary.readonly']
-API_SERVICE_NAME = 'youtubereporting'
-API_VERSION = 'v1'
 
+CLIENT_ID = "929791903032-hpdm8djidqd8o5nqg2gk66efau34ea6q.apps.googleusercontent.com"
+CLIENT_SECRET = "YHDd4FrEFtqjhIkZhprwUMuy"
+REFRESH_TOKEN = "1/RinJvsjGrAUvBj3QoHsHMvopmsf-7U0x1KCvhpo0cq0"
+ACCESS_TOKEN = "ya29.GlubBs2CfFIMOsQRkqSxgAyff5rQ8aiu1IWI6j2Ery5MsuL4VOnr9s7owicF0C_vgM8USc1IDY03jXxWlQn7dCjn2MMa5Gzh6LWZlxqLdLnU2ib8YXPR8nialM1F"
+credentials = client.OAuth2Credentials(
+    access_token = ACCESS_TOKEN,
+    client_id = CLIENT_ID,
+    client_secret = CLIENT_SECRET,
+    refresh_token = REFRESH_TOKEN,
+    token_expiry = 3600,
+    token_uri = "https://oauth2.googleapis.com/token",
+    scopes= "https://www.googleapis.com/auth/yt-analytics-monetary.readonly",
+    user_agent="Bearer",
+    revoke_uri= None)
+
+http = credentials.authorize(httplib2.Http())
 # Authorize the request and store authorization credentials.
 def get_authenticated_service():
-    flow = InstalledAppFlow.from_client_secrets_file(CLIENT_SECRETS_FILE, SCOPES)
-    credentials = flow.run_local_server()
+    # flow = InstalledAppFlow.from_client_secrets_file(CLIENT_SECRETS_FILE, SCOPES)
+    # credentials = flow.run_local_server()
     return build(API_SERVICE_NAME, API_VERSION, credentials=credentials)
 
 # Remove keyword arguments that are not set.
