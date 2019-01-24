@@ -13,12 +13,14 @@ import socket
 from google.cloud import bigquery
 from datetime import timedelta
 from datetime import datetime
+import datetime as dt_r1
 import time
 import pandas as pd
 import numpy as np
 import httplib2
 from oauth2client import client, GOOGLE_TOKEN_URI
 from datetime import datetime as dt
+import calendar
 
 '''{
   "access_token": "ya29.GlubBs2CfFIMOsQRkqSxgAyff5rQ8aiu1IWI6j2Ery5MsuL4VOnr9s7owicF0C_vgM8USc1IDY03jXxWlQn7dCjn2MMa5Gzh6LWZlxqLdLnU2ib8YXPR8nialM1F", 
@@ -151,6 +153,13 @@ def check_files(path):
         if os.path.isfile(os.path.join(path, file)):
             yield file
 
+def add_months(sourcedate,months):
+    month = sourcedate.month - 1 + months
+    year = sourcedate.year + month // 12
+    month = month % 12 + 1
+    day = min(sourcedate.day,calendar.monthrange(year,month)[1])
+    return dt_r1.date(year,month,day)
+
 def get_lastest_month_func(content_owner,table):
     query_job = client.query('''SELECT MAX( PARSE_DATE('%Y%m%d',date))  AS `newest_month_BG`
                              FROM `pops-204909.''' + content_owner + "." + table + "`")
@@ -173,9 +182,28 @@ def check_upload(file_name,content_owner,table,_date):
         query_job = client.query('''SELECT count(*) as `row_number` FROM `pops-204909.''' + content_owner + "." + table + "`" + " WHERE date='"+_date.replace("-","")+"'")
         rows = query_job.result()
         for i_row in rows:
-            _newest_month_BG = i_row.get('row_number')
-            print("_newest_month_BG = ",int(_newest_month_BG),"     ","len(data)= ",len(data))
-            if int(_newest_month_BG) == len(data):
+            row_number = i_row.get('row_number')
+            print("row_number = ",int(row_number),"     ","len(data)= ",len(data))
+            if int(row_number) == len(data):
+                os.remove(file_name)
+            else:
+                remove_if_not_complete(content_owner=content_owner,table=table,_date=_date)
+    except (ValueError,KeyError) as e:
+        print("Could not remove the file!")
+
+def check_upload_monthly(file_name,content_owner,table,_date,_last_day_of_month):
+    data = pd.read_table(file_name, sep=",")
+    data = data.replace(np.nan, '', regex=True)
+    print("_date = ",_date)
+    try:
+        a = '''SELECT count(*) as `row_number` FROM `pops-204909.''' + content_owner + "." + table + "`" + " WHERE date > '"+_date.replace("-","")+"'  and date < '"+_last_day_of_month.replace("-","")+"'"
+        print(a)
+        query_job = client.query('''SELECT count(*) as `row_number` FROM `pops-204909.''' + content_owner + "." + table + "`" + " WHERE date > '"+_date.replace("-","")+"'  and date < '"+_last_day_of_month.replace("-","")+"'")
+        rows = query_job.result()
+        for i_row in rows:
+            row_number = i_row.get('row_number')
+            print("row_number = ",int(row_number),"     ","len(data)= ",len(data))
+            if int(row_number) == len(data):
                 os.remove(file_name)
             else:
                 remove_if_not_complete(content_owner=content_owner,table=table,_date=_date)
@@ -421,17 +449,18 @@ def p_content_owner_video_metadata_a2(file_name, dataset_id,_content_owner,_tabl
 def daily_reports(content_owner,_content_owner,_table,_jobid):
     # TODO: DAILY REPORTS
     print("--------------------------" + _table + "--------------------------")
-    print("------------- Check Lastest data on Big Query -------------")
+    print("------------- Checking Previous Dataon Big Query -------------")
     lastest_date_BQ_check = get_latest_date_func(content_owner=_content_owner, table=_table)
     check_report_url = check_retrieve_reports(youtube_reporting,lastest_date_BQ=lastest_date_BQ_check,
                                          jobId=_jobid[str(_table)],
                                          onBehalfOfContentOwner=content_owners[str(content_owner)])
-    download_report(youtube_reporting,check_report_url,
+    print("Downloading report, please wait.... ")
+    download_report(youtube_reporting, check_report_url,
                     _content_owner + "_" + _table + "_" + str(lastest_date_BQ_check).split(" ")[0] + ".txt")
     for _file in check_files(FOLDER_PATH):
         if str(_file) == _content_owner + "_" + _table + "_" + str(lastest_date_BQ_check).split(" ")[0] + ".txt":
             check_upload(file_name=_file, content_owner=_content_owner, table=_table, _date=str(lastest_date_BQ_check).split(" ")[0])
-    print("------------------------- Updating newest data -------------------------")
+    print("------------------------- Updating Newest Data -------------------------")
     lastest_date_BQ = get_latest_date_func(content_owner=_content_owner, table=_table)
     try:
         _retrieve_reports = retrieve_reports(youtube_reporting, lastest_date_BQ=lastest_date_BQ,
@@ -447,13 +476,14 @@ def daily_reports(content_owner,_content_owner,_table,_jobid):
         for date_retreive, value_retrieve in _retrieve_reports.items():
             print("-------- " + _table + " Updating date: ", date_retreive, " -------------------")
             report_url = value_retrieve[1]
+            print("Downloading report, please wait....")
             download_report(youtube_reporting, report_url,
                             _content_owner + "_" + _table + "_" + str(date_retreive).split(" ")[0] + ".txt")
             for _file in check_files(FOLDER_PATH):
                 if "p_content_owner_basic_a3" in _file and _file == _content_owner + "_" + _table + "_" + \
                         str(date_retreive).split(" ")[0] + ".txt":
                     try:
-                        print("upload to: ",_content_owner,_table,str(date_retreive).split(" ")[0])
+                        print("Uploading to: ",_content_owner,_table,str(date_retreive).split(" ")[0])
                         p_content_owner_basic_a3(file_name=_file,dataset_id=_content_owner,
                                                           _content_owner=_content_owner,_table=_table,
                                                           _date=str(date_retreive).split(" ")[0])
@@ -464,7 +494,7 @@ def daily_reports(content_owner,_content_owner,_table,_jobid):
                 elif "p_content_owner_estimated_revenue_a1" in _file and _file == _content_owner + "_" + _table + "_" + \
                         str(date_retreive).split(" ")[0] + ".txt":
                     try:
-                        print("upload to: ",_content_owner,_table,str(date_retreive).split(" ")[0])
+                        print("Uploading to: ",_content_owner,_table,str(date_retreive).split(" ")[0])
                         p_content_owner_estimated_revenue_a1(file_name=_file,dataset_id=_content_owner,
                                                           _content_owner=_content_owner,_table=_table,
                                                           _date=str(date_retreive).split(" ")[0])
@@ -475,7 +505,7 @@ def daily_reports(content_owner,_content_owner,_table,_jobid):
                 elif "p_content_owner_video_metadata_a2" in _file and _file == _content_owner + "_" + _table + "_" + \
                         str(date_retreive).split(" ")[0] + ".txt":
                     try:
-                        print("upload to: ",_content_owner,_table,str(date_retreive).split(" ")[0])
+                        print("Uploading to: ",_content_owner,_table,str(date_retreive).split(" ")[0])
                         p_content_owner_video_metadata_a2(file_name=_file,dataset_id=_content_owner,
                                                           _content_owner=_content_owner,_table=_table,
                                                           _date=str(date_retreive).split(" ")[0])
@@ -489,12 +519,30 @@ def daily_reports(content_owner,_content_owner,_table,_jobid):
     else:
         print("-----" + _content_owner + "-" + _table + " is up to date! " + "-----" )
 
-def monthly_reports(_content_owner,_table,_jobid):
-    print("----------------- Checking Monthly Report --------------------")
-    newest_month_BG = get_lastest_month_func(content_owner=_content_owner, table=_table)
-    print(newest_month_BG)
+def monthly_reports(content_owner,_content_owner,_table,_jobid):
     print("--------------------------" + _table + "--------------------------")
-    _retrieve_reports_monthly = retrieve_reports(youtube_reporting, lastest_date_BQ=newest_month_BG,
+    print("------------------ Checking Previous Dataon Big Query ------------------")
+    newest_month_BG_check = get_lastest_month_func(content_owner=_content_owner, table=_table)
+    last_day_of_month = add_months(newest_month_BG_check, 1) - - timedelta(days=1)
+    last_day_of_month = datetime.combine(last_day_of_month,datetime.min.time())
+    check_report_url = check_retrieve_reports(youtube_reporting,lastest_date_BQ=newest_month_BG_check,
+                                         jobId=_jobid[str(_table)],
+                                         onBehalfOfContentOwner=content_owners[str(content_owner)])
+    print("Downloading report, please wait....")
+    download_report(youtube_reporting,check_report_url,
+                    _content_owner + "_" + _table + "_" + str(newest_month_BG_check).split(" ")[0] + ".txt")
+    for _file in check_files(FOLDER_PATH):
+        if str(_file) == _content_owner + "_" + _table + "_" + str(newest_month_BG_check).split(" ")[0] + ".txt":
+            check_upload_monthly(file_name=_file, content_owner=_content_owner, table=_table, _date=str(newest_month_BG_check).split(" ")[0],
+                                 _last_day_of_month  = str(last_day_of_month).split(" ")[0])
+    print("------------------------- Updating Newest Data -------------------------")
+    newest_month_BG = get_lastest_month_func(content_owner=_content_owner, table=_table)
+    try:
+        _retrieve_reports_monthly = retrieve_reports(youtube_reporting, lastest_date_BQ=newest_month_BG,
+                                                 jobId=_jobid[str(_table)],
+                                                 onBehalfOfContentOwner=content_owners[str(content_owner)])
+    except (AttributeError,TypeError) as e:
+        _retrieve_reports_monthly = retrieve_reports(youtube_reporting, lastest_date_BQ=str(datetime(newest_month_BG_check.year, newest_month_BG_check.month - 1, 1)).split(" ")[0],
                                                  jobId=_jobid[str(_table)],
                                                  onBehalfOfContentOwner=content_owners[str(content_owner)])
     if bool(_retrieve_reports_monthly) == True:
@@ -504,15 +552,16 @@ def monthly_reports(_content_owner,_table,_jobid):
         for date_retreive, value_retrieve in _retrieve_reports_monthly.items():
             print("-------- " + _table + " Updating date: ", date_retreive, " -------------------")
             report_url = value_retrieve[1]
+            print("Downloading report, please wait....")
             download_report(youtube_reporting, report_url, content_owner+"_"+_table+"_"+str(date_retreive).split(" ")[0]+".txt")
             for _file in check_files(FOLDER_PATH):
                 if "p_content_owner_ad_revenue_raw_a1" in _file and _file == _content_owner + "_" + _table + "_" + \
                         str(date_retreive).split(" ")[0] + ".txt":
                     try:
-                        print("upload to: ",_content_owner,_table,str(date_retreive).split(" ")[0])
+                        print("Uploading to: ",_content_owner,_table,str(date_retreive).split(" ")[0])
                         p_content_owner_ad_revenue_raw_a1(file_name=_file,dataset_id=_content_owner,_content_owner=_content_owner,_table=_table,_date=str(date_retreive).split(" ")[0] )
                         print("{0} Inserted successfully".format(_table))
-                        check_upload(file_name=_file,content_owner=_content_owner,table=_table,_date=str(date_retreive).split(" ")[0])
+                        check_upload_monthly(file_name=_file,content_owner=_content_owner,table=_table,_date=str(date_retreive).split(" ")[0])
                     except (TypeError) as e:
                         pass
                 else:
@@ -522,128 +571,137 @@ def monthly_reports(_content_owner,_table,_jobid):
         print("-----" + _content_owner + " - " + _table + " is up to date!")
 
 if __name__ == '__main__':
-    #    Music: UPtu1ivBRvjYBGoz0m0Dfg
-    #    Kids: ra8f1uKU-uu9osqlt3jb5g
-    #    Ent: ncwbWh1Q1LCsMAeryRBocQ
-    #    Aff: 9C1hXNjkMN_2GO7ARpaplw
-    #    Music-TH: iTE9_S8Uo42n3JzGAiht1w
-    #    Ent-TH: RPppPCMzH4DTihKfvR8EeA
-    #    Aff-TH: xtl5pd5oPxbhI0dI0Qpkyg
-    FOLDER_PATH = "C:\\Users\\PhucCoi\\Documents\\PYTHON" + "\\"
-    youtube_reporting = get_authenticated_service()
-    # "yt_music":"UPtu1ivBRvjYBGoz0m0Dfg","yt_kids":"ra8f1uKU-uu9osqlt3jb5g","yt_entertainment":"ncwbWh1Q1LCsMAeryRBocQ","yt_affiliate":"9C1hXNjkMN_2GO7ARpaplw","yt_th_music":"iTE9_S8Uo42n3JzGAiht1w","yt_th_entertainment":"RPppPCMzH4DTihKfvR8EeA", "yt_th_affiliate":"xtl5pd5oPxbhI0dI0Qpkyg"
-    content_owners = {"yt_th_entertainment":"RPppPCMzH4DTihKfvR8EeA"}
-    yt_music = {
-                    # "p_content_owner_basic_a3_yt_music": "04cda439-5fd1-4722-82cf-75bb311f0bdc",
-                    # "p_content_owner_estimated_revenue_a1_yt_music": "05122e5b-94b0-4368-945e-451b23451cae",
-                    "p_content_owner_video_metadata_a2_yt_music": "dad11517-31c9-4af5-ad62-d4c986743aec"
-                       # "p_content_owner_ad_revenue_raw_a1_yt_music":"58411f62-d342-4b81-ab7e-5fe4c479808f"
-                }
-
-    yt_kids = {
-                   # "p_content_owner_basic_a3_yt_kids": "1d2b93e9-7de3-4e88-876a-831d3d0e1e83",
-                   # "p_content_owner_estimated_revenue_a1_yt_kids": "0ef9cb40-039c-4c75-aa84-b96e60b0029d",
-                   # "p_content_owner_video_metadata_a2_yt_kids": "69749123-641b-43b2-a4f1-30494c6740d3"
-                   "p_content_owner_ad_revenue_raw_a1_yt_kids":"7ab6eeee-2cb4-4668-a3be-03ed125b7eb4"
-               }
-
-    yt_entertainment = {
-                        # "p_content_owner_basic_a3_yt_entertainment": "c071a36c-a9ef-4ef7-8624-4f7fbeac0702",
-                        # "p_content_owner_estimated_revenue_a1_yt_entertainment": "9955d3f3-8648-4334-8c9e-5722f6999282",
-                    "p_content_owner_video_metadata_a2_yt_entertainment": "8c38616b-358c-401b-8d4f-e9791cc50281"
-                       # "p_content_owner_ad_revenue_raw_a1_yt_entertainment":"101b91ce-92a1-4ded-a2db-0de96af565e0"
+    while True:
+        try:
+            FOLDER_PATH = "C:\\Users\\PhucCoi\\Documents\\PYTHON" + "\\"
+            while True:
+                try:
+                    youtube_reporting = get_authenticated_service()
+                    print()
+                    print("***************************************************************************************")
+                    print("*****  Authenticated! The connection is stable AF :), Moving on to the next step. ****")
+                    print("***************************************************************************************")
+                    print()
+                except socket.error:
+                    pass
+                else:
+                    break
+            # "yt_music":"UPtu1ivBRvjYBGoz0m0Dfg","yt_kids":"ra8f1uKU-uu9osqlt3jb5g","yt_entertainment":"ncwbWh1Q1LCsMAeryRBocQ","yt_affiliate":"9C1hXNjkMN_2GO7ARpaplw","yt_th_music":"iTE9_S8Uo42n3JzGAiht1w","yt_th_entertainment":"RPppPCMzH4DTihKfvR8EeA", "yt_th_affiliate":"xtl5pd5oPxbhI0dI0Qpkyg"
+            content_owners = {"yt_th_entertainment":"RPppPCMzH4DTihKfvR8EeA"}
+            yt_music = {
+                                "p_content_owner_basic_a3_yt_music": "04cda439-5fd1-4722-82cf-75bb311f0bdc",
+                                "p_content_owner_estimated_revenue_a1_yt_music": "05122e5b-94b0-4368-945e-451b23451cae",
+                                "p_content_owner_video_metadata_a2_yt_music": "dad11517-31c9-4af5-ad62-d4c986743aec",
+                                "p_content_owner_ad_revenue_raw_a1_yt_music":"58411f62-d342-4b81-ab7e-5fe4c479808f"
                         }
 
-    yt_affiliate = {"p_content_owner_basic_a3_yt_affiliate": "4f47209b-07f2-4f2b-a709-7cc5e414c0cf",
-                  "p_content_owner_estimated_revenue_a1_yt_affiliate": "6fe1250d-6851-4468-aba1-9f6adff24a81",
-                  "p_content_owner_video_metadata_a2_yt_affiliate": "d33a4a31-fb27-46ea-b1e7-968cb2a38d99"
-                       # "p_content_owner_ad_revenue_raw_a1_yt_affiliate":"d8fc0ba0-db14-46e0-adf8-560c956fbfea"
-                    }
+            yt_kids = {
+                               "p_content_owner_basic_a3_yt_kids": "1d2b93e9-7de3-4e88-876a-831d3d0e1e83",
+                               "p_content_owner_estimated_revenue_a1_yt_kids": "0ef9cb40-039c-4c75-aa84-b96e60b0029d",
+                               "p_content_owner_video_metadata_a2_yt_kids": "69749123-641b-43b2-a4f1-30494c6740d3",
+                               "p_content_owner_ad_revenue_raw_a1_yt_kids":"7ab6eeee-2cb4-4668-a3be-03ed125b7eb4"
+                       }
 
-    yt_th_music = {
-                       "p_content_owner_basic_a3_yt_th_music": "70f232e5-4c75-4613-8461-1c615a51269c",
-                       "p_content_owner_estimated_revenue_a1_yt_th_music": "406770b1-c4e8-4a25-8cd4-89da792a7211",
-                       "p_content_owner_video_metadata_a2_yt_th_music": "2f63b5da-7006-440e-9a95-69e6b5f4878d"
-                       # "p_content_owner_ad_revenue_raw_a1_yt_th_music":"d16b91f2-5885-4fbb-9ee6-3c3994decc37"
-                   }
+            yt_entertainment = {
+                                "p_content_owner_basic_a3_yt_entertainment": "c071a36c-a9ef-4ef7-8624-4f7fbeac0702",
+                                "p_content_owner_estimated_revenue_a1_yt_entertainment": "9955d3f3-8648-4334-8c9e-5722f6999282",
+                                "p_content_owner_video_metadata_a2_yt_entertainment": "8c38616b-358c-401b-8d4f-e9791cc50281",
+                                "p_content_owner_ad_revenue_raw_a1_yt_entertainment":"101b91ce-92a1-4ded-a2db-0de96af565e0"
+                                }
 
-    yt_th_entertainment = {
-                     # "p_content_owner_basic_a3_yt_th_entertainment": "45ffe8a1-9213-44d4-8d06-16102f163801",
-                     # "p_content_owner_estimated_revenue_a1_yt_th_entertainment": "9d8b729a-4d0f-46c4-a17e-b83c806b5621"
-                      "p_content_owner_video_metadata_a2_yt_th_entertainment": "0764aba7-687c-4ab0-a462-11d3c1743b53"
-                     #   "p_content_owner_ad_revenue_raw_a1_yt_th_entertainment":"10a19692-9ad8-45ef-9ceb-cdd914337818"
-                    }
+            yt_affiliate = {
+                                "p_content_owner_basic_a3_yt_affiliate": "4f47209b-07f2-4f2b-a709-7cc5e414c0cf",
+                                "p_content_owner_estimated_revenue_a1_yt_affiliate": "6fe1250d-6851-4468-aba1-9f6adff24a81",
+                                "p_content_owner_video_metadata_a2_yt_affiliate": "d33a4a31-fb27-46ea-b1e7-968cb2a38d99",
+                                "p_content_owner_ad_revenue_raw_a1_yt_affiliate":"d8fc0ba0-db14-46e0-adf8-560c956fbfea"
+                            }
 
-    yt_th_affiliate = {
-                        "p_content_owner_basic_a3_yt_th_affiliate": "bab9bac2-4c5a-4cb5-b168-ba58a659fafe",
-                        "p_content_owner_estimated_revenue_a1_yt_th_affiliate": "02d59ec8-ea7e-46c1-9ccc-9a48a7250575",
-                       "p_content_owner_video_metadata_a2_yt_th_affiliate": "0b85e9c6-83b1-44fa-9ae3-0fee70f26259"
-                       # "p_content_owner_ad_revenue_raw_a1_yt_th_affiliate":"9f2c221b-3ec2-419f-9e4c-d8aa7494b2db"
-    }
+            yt_th_music = {
+                               "p_content_owner_basic_a3_yt_th_music": "70f232e5-4c75-4613-8461-1c615a51269c",
+                               "p_content_owner_estimated_revenue_a1_yt_th_music": "406770b1-c4e8-4a25-8cd4-89da792a7211",
+                               "p_content_owner_video_metadata_a2_yt_th_music": "2f63b5da-7006-440e-9a95-69e6b5f4878d",
+                               "p_content_owner_ad_revenue_raw_a1_yt_th_music":"d16b91f2-5885-4fbb-9ee6-3c3994decc37"
+                           }
 
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "pops-dab1c699446f.json"
-    client = bigquery.Client()
-    try:
-        for content_owner in content_owners:
-            print("------------------------Working on {} CMS------------------------".format(content_owner))
-            if content_owner == "yt_music":
-                for table in yt_music:
-                    if "owner_ad_revenue_raw" not in str(table):
-                        # TODO: DAILY REPORTS
-                        daily_reports(content_owner=content_owner,_content_owner="1969",_table=table,_jobid=yt_music)
-                    else:
-                        # TODO: MONTHLY REPORTS
-                        monthly_reports(_content_owner="1969",_table=table,_jobid=yt_music)
-            elif content_owner == "yt_kids":
-                for table in yt_kids:
-                    if "owner_ad_revenue_raw" not in str(table):
-                        # TODO: DAILY REPORTS
-                        daily_reports(content_owner=content_owner,_content_owner="1969",_table=table,_jobid=yt_kids)
-                    else:
-                        # TODO: MONTHLY REPORTS
-                        monthly_reports(_content_owner="1969",_table=table,_jobid=yt_kids)
-            elif content_owner == "yt_entertainment":
-                for table in yt_entertainment:
-                    if "owner_ad_revenue_raw" not in str(table):
-                        # TODO: DAILY REPORTS
-                        daily_reports(content_owner=content_owner,_content_owner="1969",_table=table,_jobid=yt_entertainment)
-                    else:
-                        # TODO: MONTHLY REPORTS
-                        monthly_reports(_content_owner="1969",_table=table,_jobid=yt_entertainment)
-            elif content_owner == "yt_affiliate":
-                for table in yt_affiliate:
-                    if "owner_ad_revenue_raw" not in str(table):
-                        # TODO: DAILY REPORTS
-                        daily_reports(content_owner=content_owner,_content_owner="1969",_table=table,_jobid= yt_affiliate)
-                    else:
-                        # TODO: MONTHLY REPORTS
-                        monthly_reports(_content_owner=content_owner,_table=table,_jobid= yt_affiliate)
-            elif content_owner == "yt_th_music":
-                for table in yt_th_music:
-                    if "owner_ad_revenue_raw" not in str(table):
-                        # TODO: DAILY REPORTS
-                        daily_reports(content_owner=content_owner,_content_owner="1969",_table=table,_jobid= yt_th_music)
-                    else:
-                        # TODO: MONTHLY REPORTS
-                        monthly_reports(_content_owner="1969",_table=table,_jobid= yt_th_music)
-            elif content_owner == "yt_th_entertainment":
-                for table in yt_th_entertainment:
-                    if "owner_ad_revenue_raw" not in str(table):
-                        # TODO: DAILY REPORTS
-                        daily_reports(content_owner=content_owner,_content_owner="1969",_table=table,_jobid= yt_th_entertainment)
-                    else:
-                        # TODO: MONTHLY REPORTS
-                        monthly_reports(_content_owner="1969",_table=table,_jobid= yt_th_entertainment)
-            elif content_owner == "yt_th_affiliate":
-                for table in yt_th_affiliate:
-                    if "owner_ad_revenue_raw" not in str(table):
-                        # TODO: DAILY REPORTS
-                        daily_reports(content_owner=content_owner,_content_owner="1969",_table=table,_jobid= yt_th_affiliate)
-                    else:
-                        # TODO: MONTHLY REPORTS
-                        monthly_reports(_content_owner="1969",_table=table,_jobid=yt_th_affiliate)
-            else:
-                print("Impossible case. Does not match content_owner.")
-    except (HttpError,socket.timeout) as e:
-        print('An HTTP error %d occurred:\n %s' % (e.resp.status, e.content))
+            yt_th_entertainment = {
+                                 # "p_content_owner_basic_a3_yt_th_entertainment": "45ffe8a1-9213-44d4-8d06-16102f163801",
+                                 # "p_content_owner_estimated_revenue_a1_yt_th_entertainment": "9d8b729a-4d0f-46c4-a17e-b83c806b5621",
+                                 # "p_content_owner_video_metadata_a2_yt_th_entertainment": "0764aba7-687c-4ab0-a462-11d3c1743b53",
+                                 "p_content_owner_ad_revenue_raw_a1_yt_th_entertainment":"10a19692-9ad8-45ef-9ceb-cdd914337818"
+                            }
+
+            yt_th_affiliate = {
+                                "p_content_owner_basic_a3_yt_th_affiliate": "bab9bac2-4c5a-4cb5-b168-ba58a659fafe",
+                                "p_content_owner_estimated_revenue_a1_yt_th_affiliate": "02d59ec8-ea7e-46c1-9ccc-9a48a7250575",
+                                "p_content_owner_video_metadata_a2_yt_th_affiliate": "0b85e9c6-83b1-44fa-9ae3-0fee70f26259",
+                                "p_content_owner_ad_revenue_raw_a1_yt_th_affiliate":"9f2c221b-3ec2-419f-9e4c-d8aa7494b2db"
+            }
+
+            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "pops-dab1c699446f.json"
+            client = bigquery.Client()
+            for content_owner in content_owners:
+                print("------------------------Working on {} CMS------------------------".format(content_owner))
+                if content_owner == "yt_music":
+                    for table in yt_music:
+                        if "owner_ad_revenue_raw" not in str(table):
+                            # TODO: DAILY REPORTS
+                            daily_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid=yt_music)
+                        else:
+                            # TODO: MONTHLY REPORTS
+                            monthly_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid=yt_music)
+                elif content_owner == "yt_kids":
+                    for table in yt_kids:
+                        if "owner_ad_revenue_raw" not in str(table):
+                            # TODO: DAILY REPORTS
+                            daily_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid=yt_kids)
+                        else:
+                            # TODO: MONTHLY REPORTS
+                            monthly_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid=yt_kids)
+                elif content_owner == "yt_entertainment":
+                    for table in yt_entertainment:
+                        if "owner_ad_revenue_raw" not in str(table):
+                            # TODO: DAILY REPORTS
+                            daily_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid=yt_entertainment)
+                        else:
+                            # TODO: MONTHLY REPORTS
+                            monthly_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid=yt_entertainment)
+                elif content_owner == "yt_affiliate":
+                    for table in yt_affiliate:
+                        if "owner_ad_revenue_raw" not in str(table):
+                            # TODO: DAILY REPORTS
+                            daily_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid= yt_affiliate)
+                        else:
+                            # TODO: MONTHLY REPORTS
+                            monthly_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid=yt_affiliate)
+                elif content_owner == "yt_th_music":
+                    for table in yt_th_music:
+                        if "owner_ad_revenue_raw" not in str(table):
+                            # TODO: DAILY REPORTS
+                            daily_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid= yt_th_music)
+                        else:
+                            # TODO: MONTHLY REPORTS
+                            monthly_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid=yt_th_music)
+                elif content_owner == "yt_th_entertainment":
+                    for table in yt_th_entertainment:
+                        if "owner_ad_revenue_raw" not in str(table):
+                            # TODO: DAILY REPORTS
+                            daily_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid= yt_th_entertainment)
+                        else:
+                            # TODO: MONTHLY REPORTS
+                            monthly_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid=yt_th_entertainment)
+                elif content_owner == "yt_th_affiliate":
+                    for table in yt_th_affiliate:
+                        if "owner_ad_revenue_raw" not in str(table):
+                            # TODO: DAILY REPORTS
+                            daily_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid=yt_th_affiliate)
+                        else:
+                            # TODO: MONTHLY REPORTS
+                            monthly_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid=yt_th_affiliate)
+                else:
+                    print("Impossible case. Does not match content_owner.")
+        except (HttpError,socket.timeout,httplib2.ServerNotFoundError,socket.gaierror) as e:
+            print("Connection failed! But no worries, still can handle it :) Now, trying to re-connect :D")
+            time.sleep(3)
+        else:
+            break
 # type: ignore
