@@ -168,7 +168,7 @@ def check_upload_monthly(file_name,content_owner,table,_date,_last_day_of_month)
     data = pd.read_table(file_name, sep=",")
     data = data.replace(np.nan, '', regex=True)
     try:
-        query_job = client.query('''SELECT count(*) as `row_number` FROM `pops-204909.''' + content_owner + "." + table + "`" + " WHERE date > '"+_date.replace("-","")+"'  and date < '"+_last_day_of_month.replace("-","")+"'")
+        query_job = client.query('''SELECT count(*) as `row_number` FROM `pops-204909.''' + content_owner + "." + table + "`" + " WHERE PARSE_DATE('%Y%m%d',date)  between PARSE_DATE('%Y%m%d','"+_date.replace("-","")+"'  AND PARSE_DATE('%Y%m%d','"+_last_day_of_month.replace("-","")+"'")
         rows = query_job.result()
         for i_row in rows:
             row_number = i_row.get('row_number')
