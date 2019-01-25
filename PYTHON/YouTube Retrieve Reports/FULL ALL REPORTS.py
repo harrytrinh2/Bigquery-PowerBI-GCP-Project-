@@ -588,8 +588,7 @@ if __name__ == '__main__':
                     pass
                 else:
                     break
-            # "yt_music":"UPtu1ivBRvjYBGoz0m0Dfg","yt_kids":"ra8f1uKU-uu9osqlt3jb5g","yt_entertainment":"ncwbWh1Q1LCsMAeryRBocQ","yt_affiliate":"9C1hXNjkMN_2GO7ARpaplw","yt_th_music":"iTE9_S8Uo42n3JzGAiht1w","yt_th_entertainment":"RPppPCMzH4DTihKfvR8EeA", "yt_th_affiliate":"xtl5pd5oPxbhI0dI0Qpkyg"
-            content_owners = {"yt_th_entertainment":"RPppPCMzH4DTihKfvR8EeA"}
+            content_owners = {"yt_music":"UPtu1ivBRvjYBGoz0m0Dfg","yt_kids":"ra8f1uKU-uu9osqlt3jb5g","yt_entertainment":"ncwbWh1Q1LCsMAeryRBocQ","yt_affiliate":"9C1hXNjkMN_2GO7ARpaplw","yt_th_music":"iTE9_S8Uo42n3JzGAiht1w","yt_th_entertainment":"RPppPCMzH4DTihKfvR8EeA", "yt_th_affiliate":"xtl5pd5oPxbhI0dI0Qpkyg"}
             yt_music = {
                                 "p_content_owner_basic_a3_yt_music": "04cda439-5fd1-4722-82cf-75bb311f0bdc",
                                 "p_content_owner_estimated_revenue_a1_yt_music": "05122e5b-94b0-4368-945e-451b23451cae",
@@ -626,7 +625,7 @@ if __name__ == '__main__':
                            }
 
             yt_th_entertainment = {
-                                  # "p_content_owner_basic_a3_yt_th_entertainment": "45ffe8a1-9213-44d4-8d06-16102f163801",
+                                   "p_content_owner_basic_a3_yt_th_entertainment": "45ffe8a1-9213-44d4-8d06-16102f163801",
                                   "p_content_owner_estimated_revenue_a1_yt_th_entertainment": "9d8b729a-4d0f-46c4-a17e-b83c806b5621",
                                   "p_content_owner_video_metadata_a2_yt_th_entertainment": "0764aba7-687c-4ab0-a462-11d3c1743b53",
                                   "p_content_owner_ad_revenue_raw_a1_yt_th_entertainment":"10a19692-9ad8-45ef-9ceb-cdd914337818"
