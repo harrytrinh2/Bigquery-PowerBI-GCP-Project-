@@ -551,7 +551,7 @@ if __name__ == '__main__':
         try:
             while True:
                 try:
-                    FOLDER_PATH = "C:\\Users\\PhucCoi\\Documents\\PYTHON" + "\\"
+                    FOLDER_PATH = str(os.path.dirname(os.path.abspath(__file__))) + "\\"
                     '''{
                       "access_token": "ya29.GlubBs2CfFIMOsQRkqSxgAyff5rQ8aiu1IWI6j2Ery5MsuL4VOnr9s7owicF0C_vgM8USc1IDY03jXxWlQn7dCjn2MMa5Gzh6LWZlxqLdLnU2ib8YXPR8nialM1F",
                       "scope": "https://www.googleapis.com/auth/yt-analytics-monetary.readonly",
