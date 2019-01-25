@@ -21,7 +21,8 @@ import httplib2
 from oauth2client import client, GOOGLE_TOKEN_URI
 from datetime import datetime as dt
 import calendar
-
+import urllib3
+import requests
 # Authorize the request and store authorization credentials.
 def get_authenticated_service(API_SERVICE_NAME,API_VERSION,credentials):
     return build(API_SERVICE_NAME, API_VERSION, credentials=credentials)
@@ -166,10 +167,7 @@ def check_upload(file_name,content_owner,table,_date):
 def check_upload_monthly(file_name,content_owner,table,_date,_last_day_of_month):
     data = pd.read_table(file_name, sep=",")
     data = data.replace(np.nan, '', regex=True)
-    print("_date = ",_date)
     try:
-        a = '''SELECT count(*) as `row_number` FROM `pops-204909.''' + content_owner + "." + table + "`" + " WHERE date > '"+_date.replace("-","")+"'  and date < '"+_last_day_of_month.replace("-","")+"'"
-        print(a)
         query_job = client.query('''SELECT count(*) as `row_number` FROM `pops-204909.''' + content_owner + "." + table + "`" + " WHERE date > '"+_date.replace("-","")+"'  and date < '"+_last_day_of_month.replace("-","")+"'")
         rows = query_job.result()
         for i_row in rows:
@@ -421,7 +419,7 @@ def p_content_owner_video_metadata_a2(file_name, dataset_id,_content_owner,_tabl
 def daily_reports(content_owner,_content_owner,_table,_jobid):
     # TODO: DAILY REPORTS
     print("--------------------------" + _table + "--------------------------")
-    print("------------- Checking Previous Dataon Big Query -------------")
+    print("------------- Checking Previous Data on Big Query -------------")
     lastest_date_BQ_check = get_latest_date_func(content_owner=_content_owner, table=_table)
     check_report_url = check_retrieve_reports(youtube_reporting,lastest_date_BQ=lastest_date_BQ_check,
                                          jobId=_jobid[str(_table)],
@@ -433,7 +431,10 @@ def daily_reports(content_owner,_content_owner,_table,_jobid):
         if str(_file) == _content_owner + "_" + _table + "_" + str(lastest_date_BQ_check).split(" ")[0] + ".txt":
             check_upload(file_name=_file, content_owner=_content_owner, table=_table, _date=str(lastest_date_BQ_check).split(" ")[0])
     print("------------------------- Updating Newest Data -------------------------")
-    lastest_date_BQ = get_latest_date_func(content_owner=_content_owner, table=_table)
+    try:
+        lastest_date_BQ = get_latest_date_func(content_owner=_content_owner, table=_table)
+    except ValueError:
+        lastest_date_BQ = lastest_date_BQ_check - timedelta(days=1)
     try:
         _retrieve_reports = retrieve_reports(youtube_reporting, lastest_date_BQ=lastest_date_BQ,
                                          jobId=_jobid[str(_table)],
@@ -493,7 +494,7 @@ def daily_reports(content_owner,_content_owner,_table,_jobid):
 
 def monthly_reports(content_owner,_content_owner,_table,_jobid):
     print("--------------------------" + _table + "--------------------------")
-    print("------------------ Checking Previous Dataon Big Query ------------------")
+    print("------------------ Checking Previous Data on Big Query ------------------")
     newest_month_BG_check = get_lastest_month_func(content_owner=_content_owner, table=_table)
     last_day_of_month = add_months(newest_month_BG_check, 1) - - timedelta(days=1)
     last_day_of_month = datetime.combine(last_day_of_month,datetime.min.time())
@@ -508,13 +509,16 @@ def monthly_reports(content_owner,_content_owner,_table,_jobid):
             check_upload_monthly(file_name=_file, content_owner=_content_owner, table=_table, _date=str(newest_month_BG_check).split(" ")[0],
                                  _last_day_of_month  = str(last_day_of_month).split(" ")[0])
     print("------------------------- Updating Newest Data -------------------------")
-    newest_month_BG = get_lastest_month_func(content_owner=_content_owner, table=_table)
+    try:
+        newest_month_BG = get_lastest_month_func(content_owner=_content_owner, table=_table)
+    except ValueError:
+        newest_month_BG = datetime(newest_month_BG_check.year, newest_month_BG_check.month - 1, 1)
     try:
         _retrieve_reports_monthly = retrieve_reports(youtube_reporting, lastest_date_BQ=newest_month_BG,
                                                  jobId=_jobid[str(_table)],
                                                  onBehalfOfContentOwner=content_owners[str(content_owner)])
     except (AttributeError,TypeError) as e:
-        _retrieve_reports_monthly = retrieve_reports(youtube_reporting, lastest_date_BQ=str(datetime(newest_month_BG_check.year, newest_month_BG_check.month - 1, 1)).split(" ")[0],
+        _retrieve_reports_monthly = retrieve_reports(youtube_reporting, lastest_date_BQ=datetime(newest_month_BG_check.year, newest_month_BG_check.month - 1, 1),
                                                  jobId=_jobid[str(_table)],
                                                  onBehalfOfContentOwner=content_owners[str(content_owner)])
     if bool(_retrieve_reports_monthly) == True:
@@ -545,41 +549,40 @@ def monthly_reports(content_owner,_content_owner,_table,_jobid):
 if __name__ == '__main__':
     while True:
         try:
-            FOLDER_PATH = "C:\\Users\\PhucCoi\\Documents\\PYTHON" + "\\"
-            '''{
-              "access_token": "ya29.GlubBs2CfFIMOsQRkqSxgAyff5rQ8aiu1IWI6j2Ery5MsuL4VOnr9s7owicF0C_vgM8USc1IDY03jXxWlQn7dCjn2MMa5Gzh6LWZlxqLdLnU2ib8YXPR8nialM1F", 
-              "scope": "https://www.googleapis.com/auth/yt-analytics-monetary.readonly", 
-              "token_type": "Bearer", 
-              "expires_in": 3600, 
-              "refresh_token": "1/JqgakzyJwsSnyBijkgXdb4Aq0n1IEhVig09kla5qCqE"
-            }
-            '''
-            CLIENT_SECRETS_FILE = "client_secret_929791903032-hpdm8djidqd8o5nqg2gk66efau34ea6q.apps.googleusercontent.com.json"
-            SCOPES = ['https://www.googleapis.com/auth/yt-analytics-monetary.readonly']
-            API_SERVICE_NAME = 'youtubereporting'
-            API_VERSION = 'v1'
-            CLIENT_ID = "929791903032-hpdm8djidqd8o5nqg2gk66efau34ea6q.apps.googleusercontent.com"
-            CLIENT_SECRET = "YHDd4FrEFtqjhIkZhprwUMuy"
-            REFRESH_TOKEN = "1/RinJvsjGrAUvBj3QoHsHMvopmsf-7U0x1KCvhpo0cq0"
-            ACCESS_TOKEN = "ya29.GlubBs2CfFIMOsQRkqSxgAyff5rQ8aiu1IWI6j2Ery5MsuL4VOnr9s7owicF0C_vgM8USc1IDY03jXxWlQn7dCjn2MMa5Gzh6LWZlxqLdLnU2ib8YXPR8nialM1F"
-            credentials = client.OAuth2Credentials(
-                access_token=ACCESS_TOKEN,
-                client_id=CLIENT_ID,
-                client_secret=CLIENT_SECRET,
-                refresh_token=REFRESH_TOKEN,
-                token_expiry=3600,
-                token_uri="https://oauth2.googleapis.com/token",
-                scopes="https://www.googleapis.com/auth/yt-analytics-monetary.readonly",
-                user_agent="Bearer",
-                revoke_uri=None
-            )
-
             while True:
                 try:
+                    FOLDER_PATH = "C:\\Users\\PhucCoi\\Documents\\PYTHON" + "\\"
+                    '''{
+                      "access_token": "ya29.GlubBs2CfFIMOsQRkqSxgAyff5rQ8aiu1IWI6j2Ery5MsuL4VOnr9s7owicF0C_vgM8USc1IDY03jXxWlQn7dCjn2MMa5Gzh6LWZlxqLdLnU2ib8YXPR8nialM1F", 
+                      "scope": "https://www.googleapis.com/auth/yt-analytics-monetary.readonly", 
+                      "token_type": "Bearer", 
+                      "expires_in": 3600, 
+                      "refresh_token": "1/JqgakzyJwsSnyBijkgXdb4Aq0n1IEhVig09kla5qCqE"
+                    }
+                    '''
+                    CLIENT_SECRETS_FILE = "client_secret_929791903032-hpdm8djidqd8o5nqg2gk66efau34ea6q.apps.googleusercontent.com.json"
+                    SCOPES = ['https://www.googleapis.com/auth/yt-analytics-monetary.readonly']
+                    API_SERVICE_NAME = 'youtubereporting'
+                    API_VERSION = 'v1'
+                    CLIENT_ID = "929791903032-hpdm8djidqd8o5nqg2gk66efau34ea6q.apps.googleusercontent.com"
+                    CLIENT_SECRET = "YHDd4FrEFtqjhIkZhprwUMuy"
+                    REFRESH_TOKEN = "1/RinJvsjGrAUvBj3QoHsHMvopmsf-7U0x1KCvhpo0cq0"
+                    ACCESS_TOKEN = "ya29.GlubBs2CfFIMOsQRkqSxgAyff5rQ8aiu1IWI6j2Ery5MsuL4VOnr9s7owicF0C_vgM8USc1IDY03jXxWlQn7dCjn2MMa5Gzh6LWZlxqLdLnU2ib8YXPR8nialM1F"
+                    credentials = client.OAuth2Credentials(
+                            access_token=ACCESS_TOKEN,
+                            client_id=CLIENT_ID,
+                            client_secret=CLIENT_SECRET,
+                            refresh_token=REFRESH_TOKEN,
+                            token_expiry=3600,
+                            token_uri="https://oauth2.googleapis.com/token",
+                            scopes="https://www.googleapis.com/auth/yt-analytics-monetary.readonly",
+                            user_agent="Bearer",
+                            revoke_uri=None)
+
                     youtube_reporting = get_authenticated_service(API_SERVICE_NAME=API_SERVICE_NAME,API_VERSION=API_VERSION,credentials=credentials)
                     print()
                     print("***************************************************************************************")
-                    print("*****  Authenticated! The connection is stable AF :), Moving on to the next step. ****")
+                    print("*************  Authenticated with Google API! Moving on to the next step. *************")
                     print("***************************************************************************************")
                     print()
                 except socket.error:
@@ -624,10 +627,10 @@ if __name__ == '__main__':
                            }
 
             yt_th_entertainment = {
-                                 # "p_content_owner_basic_a3_yt_th_entertainment": "45ffe8a1-9213-44d4-8d06-16102f163801",
-                                 # "p_content_owner_estimated_revenue_a1_yt_th_entertainment": "9d8b729a-4d0f-46c4-a17e-b83c806b5621",
-                                 # "p_content_owner_video_metadata_a2_yt_th_entertainment": "0764aba7-687c-4ab0-a462-11d3c1743b53",
-                                 "p_content_owner_ad_revenue_raw_a1_yt_th_entertainment":"10a19692-9ad8-45ef-9ceb-cdd914337818"
+                                  # "p_content_owner_basic_a3_yt_th_entertainment": "45ffe8a1-9213-44d4-8d06-16102f163801",
+                                  "p_content_owner_estimated_revenue_a1_yt_th_entertainment": "9d8b729a-4d0f-46c4-a17e-b83c806b5621",
+                                  "p_content_owner_video_metadata_a2_yt_th_entertainment": "0764aba7-687c-4ab0-a462-11d3c1743b53",
+                                  "p_content_owner_ad_revenue_raw_a1_yt_th_entertainment":"10a19692-9ad8-45ef-9ceb-cdd914337818"
                             }
 
             yt_th_affiliate = {
@@ -645,61 +648,61 @@ if __name__ == '__main__':
                     for table in yt_music:
                         if "owner_ad_revenue_raw" not in str(table):
                             # TODO: DAILY REPORTS
-                            daily_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid=yt_music)
+                            daily_reports(content_owner=content_owner,_content_owner="1969",_table=table,_jobid=yt_music)
                         else:
                             # TODO: MONTHLY REPORTS
-                            monthly_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid=yt_music)
+                            monthly_reports(content_owner=content_owner,_content_owner="1969",_table=table,_jobid=yt_music)
                 elif content_owner == "yt_kids":
                     for table in yt_kids:
                         if "owner_ad_revenue_raw" not in str(table):
                             # TODO: DAILY REPORTS
-                            daily_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid=yt_kids)
+                            daily_reports(content_owner=content_owner,_content_owner="1969",_table=table,_jobid=yt_kids)
                         else:
                             # TODO: MONTHLY REPORTS
-                            monthly_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid=yt_kids)
+                            monthly_reports(content_owner=content_owner,_content_owner="1969",_table=table,_jobid=yt_kids)
                 elif content_owner == "yt_entertainment":
                     for table in yt_entertainment:
                         if "owner_ad_revenue_raw" not in str(table):
                             # TODO: DAILY REPORTS
-                            daily_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid=yt_entertainment)
+                            daily_reports(content_owner=content_owner,_content_owner="1969",_table=table,_jobid=yt_entertainment)
                         else:
                             # TODO: MONTHLY REPORTS
-                            monthly_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid=yt_entertainment)
+                            monthly_reports(content_owner=content_owner,_content_owner="1969",_table=table,_jobid=yt_entertainment)
                 elif content_owner == "yt_affiliate":
                     for table in yt_affiliate:
                         if "owner_ad_revenue_raw" not in str(table):
                             # TODO: DAILY REPORTS
-                            daily_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid= yt_affiliate)
+                            daily_reports(content_owner=content_owner,_content_owner="1969",_table=table,_jobid= yt_affiliate)
                         else:
                             # TODO: MONTHLY REPORTS
-                            monthly_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid=yt_affiliate)
+                            monthly_reports(content_owner=content_owner,_content_owner="1969",_table=table,_jobid=yt_affiliate)
                 elif content_owner == "yt_th_music":
                     for table in yt_th_music:
                         if "owner_ad_revenue_raw" not in str(table):
                             # TODO: DAILY REPORTS
-                            daily_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid= yt_th_music)
+                            daily_reports(content_owner=content_owner,_content_owner="1969",_table=table,_jobid= yt_th_music)
                         else:
                             # TODO: MONTHLY REPORTS
-                            monthly_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid=yt_th_music)
+                            monthly_reports(content_owner=content_owner,_content_owner="1969",_table=table,_jobid=yt_th_music)
                 elif content_owner == "yt_th_entertainment":
                     for table in yt_th_entertainment:
                         if "owner_ad_revenue_raw" not in str(table):
                             # TODO: DAILY REPORTS
-                            daily_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid= yt_th_entertainment)
+                            daily_reports(content_owner=content_owner,_content_owner="1969",_table=table,_jobid= yt_th_entertainment)
                         else:
                             # TODO: MONTHLY REPORTS
-                            monthly_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid=yt_th_entertainment)
+                            monthly_reports(content_owner=content_owner,_content_owner="1969",_table=table,_jobid=yt_th_entertainment)
                 elif content_owner == "yt_th_affiliate":
                     for table in yt_th_affiliate:
                         if "owner_ad_revenue_raw" not in str(table):
                             # TODO: DAILY REPORTS
-                            daily_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid=yt_th_affiliate)
+                            daily_reports(content_owner=content_owner,_content_owner="1969",_table=table,_jobid=yt_th_affiliate)
                         else:
                             # TODO: MONTHLY REPORTS
-                            monthly_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid=yt_th_affiliate)
+                            monthly_reports(content_owner=content_owner,_content_owner="1969",_table=table,_jobid=yt_th_affiliate)
                 else:
                     print("Impossible case. Does not match content_owner.")
-        except (HttpError,socket.timeout,httplib2.ServerNotFoundError,socket.gaierror) as e:
+        except (HttpError,socket.timeout,httplib2.ServerNotFoundError,socket.gaierror,OSError,urllib3.exceptions.ProtocolError,requests.exceptions.ConnectionError) as e:
             print("Connection failed! But no worries, still can handle it :) Now, trying to re-connect :D")
             time.sleep(3)
         else:
