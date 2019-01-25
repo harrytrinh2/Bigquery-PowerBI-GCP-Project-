@@ -553,10 +553,10 @@ if __name__ == '__main__':
                 try:
                     FOLDER_PATH = "C:\\Users\\PhucCoi\\Documents\\PYTHON" + "\\"
                     '''{
-                      "access_token": "ya29.GlubBs2CfFIMOsQRkqSxgAyff5rQ8aiu1IWI6j2Ery5MsuL4VOnr9s7owicF0C_vgM8USc1IDY03jXxWlQn7dCjn2MMa5Gzh6LWZlxqLdLnU2ib8YXPR8nialM1F", 
-                      "scope": "https://www.googleapis.com/auth/yt-analytics-monetary.readonly", 
-                      "token_type": "Bearer", 
-                      "expires_in": 3600, 
+                      "access_token": "ya29.GlubBs2CfFIMOsQRkqSxgAyff5rQ8aiu1IWI6j2Ery5MsuL4VOnr9s7owicF0C_vgM8USc1IDY03jXxWlQn7dCjn2MMa5Gzh6LWZlxqLdLnU2ib8YXPR8nialM1F",
+                      "scope": "https://www.googleapis.com/auth/yt-analytics-monetary.readonly",
+                      "token_type": "Bearer",
+                      "expires_in": 3600,
                       "refresh_token": "1/JqgakzyJwsSnyBijkgXdb4Aq0n1IEhVig09kla5qCqE"
                     }
                     '''
@@ -578,7 +578,6 @@ if __name__ == '__main__':
                             scopes="https://www.googleapis.com/auth/yt-analytics-monetary.readonly",
                             user_agent="Bearer",
                             revoke_uri=None)
-
                     youtube_reporting = get_authenticated_service(API_SERVICE_NAME=API_SERVICE_NAME,API_VERSION=API_VERSION,credentials=credentials)
                     print()
                     print("***************************************************************************************")
