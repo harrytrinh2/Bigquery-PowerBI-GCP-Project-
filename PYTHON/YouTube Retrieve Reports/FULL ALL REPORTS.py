@@ -646,58 +646,58 @@ if __name__ == '__main__':
                     for table in yt_music:
                         if "owner_ad_revenue_raw" not in str(table):
                             # TODO: DAILY REPORTS
-                            daily_reports(content_owner=content_owner,_content_owner="1969",_table=table,_jobid=yt_music)
+                            daily_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid=yt_music)
                         else:
                             # TODO: MONTHLY REPORTS
-                            monthly_reports(content_owner=content_owner,_content_owner="1969",_table=table,_jobid=yt_music)
+                            monthly_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid=yt_music)
                 elif content_owner == "yt_kids":
                     for table in yt_kids:
                         if "owner_ad_revenue_raw" not in str(table):
                             # TODO: DAILY REPORTS
-                            daily_reports(content_owner=content_owner,_content_owner="1969",_table=table,_jobid=yt_kids)
+                            daily_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid=yt_kids)
                         else:
                             # TODO: MONTHLY REPORTS
-                            monthly_reports(content_owner=content_owner,_content_owner="1969",_table=table,_jobid=yt_kids)
+                            monthly_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid=yt_kids)
                 elif content_owner == "yt_entertainment":
                     for table in yt_entertainment:
                         if "owner_ad_revenue_raw" not in str(table):
                             # TODO: DAILY REPORTS
-                            daily_reports(content_owner=content_owner,_content_owner="1969",_table=table,_jobid=yt_entertainment)
+                            daily_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid=yt_entertainment)
                         else:
                             # TODO: MONTHLY REPORTS
-                            monthly_reports(content_owner=content_owner,_content_owner="1969",_table=table,_jobid=yt_entertainment)
+                            monthly_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid=yt_entertainment)
                 elif content_owner == "yt_affiliate":
                     for table in yt_affiliate:
                         if "owner_ad_revenue_raw" not in str(table):
                             # TODO: DAILY REPORTS
-                            daily_reports(content_owner=content_owner,_content_owner="1969",_table=table,_jobid= yt_affiliate)
+                            daily_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid= yt_affiliate)
                         else:
                             # TODO: MONTHLY REPORTS
-                            monthly_reports(content_owner=content_owner,_content_owner="1969",_table=table,_jobid=yt_affiliate)
+                            monthly_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid=yt_affiliate)
                 elif content_owner == "yt_th_music":
                     for table in yt_th_music:
                         if "owner_ad_revenue_raw" not in str(table):
                             # TODO: DAILY REPORTS
-                            daily_reports(content_owner=content_owner,_content_owner="1969",_table=table,_jobid= yt_th_music)
+                            daily_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid= yt_th_music)
                         else:
                             # TODO: MONTHLY REPORTS
-                            monthly_reports(content_owner=content_owner,_content_owner="1969",_table=table,_jobid=yt_th_music)
+                            monthly_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid=yt_th_music)
                 elif content_owner == "yt_th_entertainment":
                     for table in yt_th_entertainment:
                         if "owner_ad_revenue_raw" not in str(table):
                             # TODO: DAILY REPORTS
-                            daily_reports(content_owner=content_owner,_content_owner="1969",_table=table,_jobid= yt_th_entertainment)
+                            daily_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid= yt_th_entertainment)
                         else:
                             # TODO: MONTHLY REPORTS
-                            monthly_reports(content_owner=content_owner,_content_owner="1969",_table=table,_jobid=yt_th_entertainment)
+                            monthly_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid=yt_th_entertainment)
                 elif content_owner == "yt_th_affiliate":
                     for table in yt_th_affiliate:
                         if "owner_ad_revenue_raw" not in str(table):
                             # TODO: DAILY REPORTS
-                            daily_reports(content_owner=content_owner,_content_owner="1969",_table=table,_jobid=yt_th_affiliate)
+                            daily_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid=yt_th_affiliate)
                         else:
                             # TODO: MONTHLY REPORTS
-                            monthly_reports(content_owner=content_owner,_content_owner="1969",_table=table,_jobid=yt_th_affiliate)
+                            monthly_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid=yt_th_affiliate)
                 else:
                     print("Impossible case. Does not match content_owner.")
         except (HttpError,socket.timeout,httplib2.ServerNotFoundError,socket.gaierror,OSError,urllib3.exceptions.ProtocolError,requests.exceptions.ConnectionError) as e:
