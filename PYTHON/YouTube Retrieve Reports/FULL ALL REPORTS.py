@@ -572,7 +572,7 @@ if __name__ == '__main__':
                             refresh_token=REFRESH_TOKEN,
                             token_expiry=3600,
                             token_uri="https://oauth2.googleapis.com/token",
-                            scopes="https://www.googleapis.com/auth/yt-analytics-monetary.readonly",
+                            scopes= SCOPES,
                             user_agent="Bearer",
                             revoke_uri=None)
                     youtube_reporting = get_authenticated_service(API_SERVICE_NAME=API_SERVICE_NAME,API_VERSION=API_VERSION,credentials=credentials)
