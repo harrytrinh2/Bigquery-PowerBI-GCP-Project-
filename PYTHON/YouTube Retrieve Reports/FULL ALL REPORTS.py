@@ -703,8 +703,7 @@ if __name__ == '__main__':
                             monthly_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid=yt_th_affiliate)
                 else:
                     print("Impossible case. Does not match content_owner.")
-                    #HttpError,socket.timeout,httplib2.ServerNotFoundError,socket.gaierror,OSError,urllib3.exceptions.ProtocolError,requests.exceptions.ConnectionError
-        except (FileNotFoundError) as e:
+        except (HttpError,socket.timeout,httplib2.ServerNotFoundError,socket.gaierror,OSError,urllib3.exceptions.ProtocolError,requests.exceptions.ConnectionError) as e:
             print("Connection failed! But no worries, still can handle it :) Now, trying to re-connect :D")
             time.sleep(3)
         else:
