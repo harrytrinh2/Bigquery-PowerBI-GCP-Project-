@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-
+import re
+import ast
 import os
 import google.oauth2.credentials
 import google_auth_oauthlib.flow
@@ -23,9 +24,13 @@ from datetime import datetime as dt
 import calendar
 import urllib3
 import requests
+
 # Authorize the request and store authorization credentials.
-def get_authenticated_service(API_SERVICE_NAME,API_VERSION,credentials):
-    return build(API_SERVICE_NAME, API_VERSION, credentials=credentials)
+def get_authenticated_service(API_SERVICE_NAME,API_VERSION,CREDENTIALS):
+    # flow = InstalledAppFlow.from_client_secrets_file(CLIENT_SECRETS_FILE, SCOPES)
+    # credentials = flow.run_local_server()
+
+    return build(API_SERVICE_NAME, API_VERSION, credentials=CREDENTIALS)
 
 # Remove keyword arguments that are not set.
 def remove_empty_kwargs(**kwargs):
@@ -76,7 +81,6 @@ def check_retrieve_reports(youtube_reporting,lastest_date_BQ, **kwargs):
     # Only include the onBehalfOfContentOwner keyword argument if the user
     # set a value for the --content_owner argument.
     kwargs = remove_empty_kwargs(**kwargs)
-
     # Retrieve available reports for the selected job.
     results = youtube_reporting.jobs().reports().list(**kwargs).execute()
     downloadUrl = ''
@@ -133,6 +137,10 @@ def add_months(sourcedate,months):
     day = min(sourcedate.day,calendar.monthrange(year,month)[1])
     return dt_r1.date(year,month,day)
 
+def last_day_of_month_fun(any_day):
+    next_month = any_day.replace(day=28) + timedelta(days=4)  # this will never fail
+    return next_month - timedelta(days=next_month.day)
+
 def get_lastest_month_func(content_owner,table):
     query_job = client.query('''SELECT MAX( PARSE_DATE('%Y%m%d',date))  AS `newest_month_BG`
                              FROM `pops-204909.''' + content_owner + "." + table + "`")
@@ -143,7 +151,14 @@ def get_lastest_month_func(content_owner,table):
 
 def remove_if_not_complete(content_owner,table,_date):
     try:
-        query_job = client.query('''DELETE FROM `pops-204909.''' + content_owner + "." + table + "`" + " WHERE date='"+_date.replace("-","")+"'")
+        query_job = client.query('''DELETE FROM `pops-204909.''' + content_owner + "." + table + "`" + " WHERE date ='"+_date.replace("-","")+"'")
+        rows = query_job.result()
+    except:
+        pass
+
+def remove_if_not_complete_month(content_owner,table,_date):
+    try:
+        query_job = client.query('''DELETE FROM `pops-204909.''' + content_owner + "." + table + "`" + " WHERE PARSE_DATE('%Y%m%d',date) >= PARSE_DATE('%Y%m%d','"+_date.replace("-","")+"')")
         rows = query_job.result()
     except:
         pass
@@ -168,7 +183,7 @@ def check_upload_monthly(file_name,content_owner,table,_date,_last_day_of_month)
     data = pd.read_table(file_name, sep=",")
     data = data.replace(np.nan, '', regex=True)
     try:
-        query_job = client.query('''SELECT count(*) as `row_number` FROM `pops-204909.''' + content_owner + "." + table + "`" + " WHERE PARSE_DATE('%Y%m%d',date)  between PARSE_DATE('%Y%m%d','"+_date.replace("-","")+"'  AND PARSE_DATE('%Y%m%d','"+_last_day_of_month.replace("-","")+"'")
+        query_job = client.query('''SELECT count(*) as `row_number` FROM `pops-204909.''' + content_owner + "." + table + "`" + " WHERE PARSE_DATE('%Y%m%d',date)  between PARSE_DATE('%Y%m%d','"+_date.replace("-","")+"')  AND PARSE_DATE('%Y%m%d','"+_last_day_of_month.replace("-","")+"')")
         rows = query_job.result()
         for i_row in rows:
             row_number = i_row.get('row_number')
@@ -176,7 +191,7 @@ def check_upload_monthly(file_name,content_owner,table,_date,_last_day_of_month)
             if int(row_number) == len(data):
                 os.remove(file_name)
             else:
-                remove_if_not_complete(content_owner=content_owner,table=table,_date=_date)
+                remove_if_not_complete_month(content_owner=content_owner,table=table,_date=_date)
     except (ValueError,KeyError) as e:
         print("Could not remove the file!")
 
@@ -418,7 +433,7 @@ def p_content_owner_video_metadata_a2(file_name, dataset_id,_content_owner,_tabl
 
 def daily_reports(content_owner,_content_owner,_table,_jobid):
     # TODO: DAILY REPORTS
-    print("--------------------------" + _table + "--------------------------")
+    print("-------------------------- " + _table + " --------------------------")
     print("------------- Checking Previous Data on Big Query -------------")
     lastest_date_BQ_check = get_latest_date_func(content_owner=_content_owner, table=_table)
     check_report_url = check_retrieve_reports(youtube_reporting,lastest_date_BQ=lastest_date_BQ_check,
@@ -496,14 +511,13 @@ def monthly_reports(content_owner,_content_owner,_table,_jobid):
     print("--------------------------" + _table + "--------------------------")
     print("------------------ Checking Previous Data on Big Query ------------------")
     newest_month_BG_check = get_lastest_month_func(content_owner=_content_owner, table=_table)
-    last_day_of_month = add_months(newest_month_BG_check, 1) - - timedelta(days=1)
-    last_day_of_month = datetime.combine(last_day_of_month,datetime.min.time())
+    last_day_of_month = last_day_of_month_fun(newest_month_BG_check)
     check_report_url = check_retrieve_reports(youtube_reporting,lastest_date_BQ=newest_month_BG_check,
                                          jobId=_jobid[str(_table)],
                                          onBehalfOfContentOwner=content_owners[str(content_owner)])
     print("Downloading report, please wait....")
     download_report(youtube_reporting,check_report_url,
-                    _content_owner + "_" + _table + "_" + str(newest_month_BG_check).split(" ")[0] + ".txt")
+                 _content_owner + "_" + _table + "_" + str(newest_month_BG_check).split(" ")[0] + ".txt")
     for _file in check_files(FOLDER_PATH):
         if str(_file) == _content_owner + "_" + _table + "_" + str(newest_month_BG_check).split(" ")[0] + ".txt":
             check_upload_monthly(file_name=_file, content_owner=_content_owner, table=_table, _date=str(newest_month_BG_check).split(" ")[0],
@@ -549,42 +563,35 @@ def monthly_reports(content_owner,_content_owner,_table,_jobid):
 if __name__ == '__main__':
     while True:
         try:
-            while True:
-                try:
-                    FOLDER_PATH = str(os.path.dirname(os.path.abspath(__file__))) + "\\"
-                    try:
-                        tokens = open("tokens.txt").readlines()
-                    except FileNotFoundError:
-                        print("File tokens do not exist!")
-                        break
-                    CLIENT_SECRETS_FILE = tokens[0].split("=")[1]
-                    SCOPES = tokens[1].split("=")[1]
-                    API_SERVICE_NAME = tokens[2].split("=")[1]
-                    API_VERSION = tokens[3].split("=")[1]
-                    CLIENT_ID = tokens[4].split("=")[1]
-                    CLIENT_SECRET = tokens[5].split("=")[1]
-                    REFRESH_TOKEN = tokens[6].split("=")[1]
-                    ACCESS_TOKEN = tokens[7].split("=")[1]
-                    credentials = client.OAuth2Credentials(
-                            access_token=ACCESS_TOKEN,
-                            client_id=CLIENT_ID,
-                            client_secret=CLIENT_SECRET,
-                            refresh_token=REFRESH_TOKEN,
-                            token_expiry=3600,
-                            token_uri="https://oauth2.googleapis.com/token",
-                            scopes= SCOPES,
-                            user_agent="Bearer",
-                            revoke_uri=None)
-                    youtube_reporting = get_authenticated_service(API_SERVICE_NAME=API_SERVICE_NAME,API_VERSION=API_VERSION,credentials=credentials)
-                    print()
-                    print("***************************************************************************************")
-                    print("*************  Authenticated with Google API! Moving on to the next step. *************")
-                    print("***************************************************************************************")
-                    print()
-                except socket.error:
-                    pass
-                else:
-                    break
+            FOLDER_PATH = str(os.path.dirname(os.path.abspath(__file__))) + "\\"
+            tokens = open("tokens.txt").readlines()
+            CLIENT_SECRETS_FILE = re.sub("\s+\Z", "", re.sub("^\s+", "", tokens[0].split("=")[1].replace('"', '')))
+            SCOPES = ast.literal_eval(
+                re.sub("\s+\Z", "", re.sub("^\s+", "", tokens[1].split("=")[1].replace('"', ''))))
+            API_SERVICE_NAME = str(re.sub("\s+\Z", "", re.sub("^\s+", "", tokens[2].split("=")[1].replace("'", ''))))
+            API_VERSION = str(re.sub("\s+\Z", "", re.sub("^\s+", "", tokens[3].split("=")[1].replace("'", ''))))
+            CLIENT_ID = re.sub("\s+\Z", "", re.sub("^\s+", "", tokens[4].split("=")[1].replace('"', '')))
+            CLIENT_SECRET = re.sub("\s+\Z", "", re.sub("^\s+", "", tokens[5].split("=")[1].replace('"', '')))
+            REFRESH_TOKEN = re.sub("\s+\Z", "", re.sub("^\s+", "", tokens[6].split("=")[1].replace('"', '')))
+            ACCESS_TOKEN = re.sub("\s+\Z", "", re.sub("^\s+", "", tokens[7].split("=")[1].replace('"', '')))
+            CREDENTIALS = client.OAuth2Credentials(
+                    access_token=ACCESS_TOKEN,
+                    client_id=CLIENT_ID,
+                    client_secret=CLIENT_SECRET,
+                    refresh_token=REFRESH_TOKEN,
+                    token_expiry=3600,
+                    token_uri="https://oauth2.googleapis.com/token",
+                    scopes=SCOPES,
+                    user_agent="Bearer",
+                    revoke_uri=None)
+
+            youtube_reporting = get_authenticated_service(API_SERVICE_NAME=API_SERVICE_NAME,API_VERSION=API_VERSION,CREDENTIALS=CREDENTIALS)
+            print()
+            print("***************************************************************************************")
+            print("*************  Authenticated with Google API! Moving on to the next step. *************")
+            print("***************************************************************************************")
+            print()
+            
             content_owners = {"yt_music":"UPtu1ivBRvjYBGoz0m0Dfg","yt_kids":"ra8f1uKU-uu9osqlt3jb5g","yt_entertainment":"ncwbWh1Q1LCsMAeryRBocQ","yt_affiliate":"9C1hXNjkMN_2GO7ARpaplw","yt_th_music":"iTE9_S8Uo42n3JzGAiht1w","yt_th_entertainment":"RPppPCMzH4DTihKfvR8EeA", "yt_th_affiliate":"xtl5pd5oPxbhI0dI0Qpkyg"}
             yt_music = {
                                 "p_content_owner_basic_a3_yt_music": "04cda439-5fd1-4722-82cf-75bb311f0bdc",
@@ -627,7 +634,6 @@ if __name__ == '__main__':
                                   "p_content_owner_video_metadata_a2_yt_th_entertainment": "0764aba7-687c-4ab0-a462-11d3c1743b53",
                                   "p_content_owner_ad_revenue_raw_a1_yt_th_entertainment":"10a19692-9ad8-45ef-9ceb-cdd914337818"
                             }
-
             yt_th_affiliate = {
                                 "p_content_owner_basic_a3_yt_th_affiliate": "bab9bac2-4c5a-4cb5-b168-ba58a659fafe",
                                 "p_content_owner_estimated_revenue_a1_yt_th_affiliate": "02d59ec8-ea7e-46c1-9ccc-9a48a7250575",
@@ -697,7 +703,8 @@ if __name__ == '__main__':
                             monthly_reports(content_owner=content_owner,_content_owner="2019",_table=table,_jobid=yt_th_affiliate)
                 else:
                     print("Impossible case. Does not match content_owner.")
-        except (HttpError,socket.timeout,httplib2.ServerNotFoundError,socket.gaierror,OSError,urllib3.exceptions.ProtocolError,requests.exceptions.ConnectionError) as e:
+                    #HttpError,socket.timeout,httplib2.ServerNotFoundError,socket.gaierror,OSError,urllib3.exceptions.ProtocolError,requests.exceptions.ConnectionError
+        except (FileNotFoundError) as e:
             print("Connection failed! But no worries, still can handle it :) Now, trying to re-connect :D")
             time.sleep(3)
         else:
