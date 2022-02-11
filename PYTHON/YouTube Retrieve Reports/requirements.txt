@@ -4,5 +4,5 @@ httplib2==0.18.0
 google_auth_oauthlib==0.2.0
 numpy==1.15.4
 urllib3==1.24.2
-protobuf==3.6.1
+protobuf==3.15.0
 google_api_python_client==1.7.7
